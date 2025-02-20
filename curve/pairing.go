@@ -4,7 +4,7 @@ import (
 	"github.com/Nik-U/pbc"
 )
 
-func PairingGen(cur int) *pbc.Pairing {
+func PairingGen(cur Curve) *pbc.Pairing {
 	var param *pbc.Params
 	var err error
 	switch cur {
