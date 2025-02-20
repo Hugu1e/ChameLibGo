@@ -1,10 +1,7 @@
-package test
+package curve
 
 import (
 	"testing"
-
-	"github.com/Hugu1e/ChameLibGo/curve"
-	"github.com/Hugu1e/ChameLibGo/utils"
 	"github.com/Nik-U/pbc"
 )
 
@@ -33,65 +30,65 @@ func TestRandomTypeACurve(t *testing.T) {
 }
 
 func TestTypeACurve(t *testing.T) {
-    baseRun(t, utils.PairingGen(curve.A))
+    baseRun(t, PairingGen(A))
 }
 
 // func TestTypeA_80Curve(t *testing.T) {
-// 	baseRun(t, utils.PairingGen(curve.A_80))
+// 	baseRun(t, PairingGen(A_80))
 // }
 
 // func TestTypeA_112Curve(t *testing.T) {
-// 	baseRun(t, utils.PairingGen(curve.A_112))
+// 	baseRun(t, PairingGen(A_112))
 // }
 
 // func TestTypeA_128Curve(t *testing.T) {
-// 	baseRun(t, utils.PairingGen(curve.A_128))
+// 	baseRun(t, PairingGen(A_128))
 // }
 
 // func TestTypeA_160Curve(t *testing.T) {
-// 	baseRun(t, utils.PairingGen(curve.A_160))
+// 	baseRun(t, PairingGen(A_160))
 // }
 
 func TestTypeA1Curve(t *testing.T) {
-	baseRun(t, utils.PairingGen(curve.A1))
+	baseRun(t, PairingGen(A1))
 }
 
 func TestTypeD_159Curve(t *testing.T) {
-	baseRun(t, utils.PairingGen(curve.D_159))
+	baseRun(t, PairingGen(D_159))
 }
 
 func TestTypeD_201Curve(t *testing.T) {
-	baseRun(t, utils.PairingGen(curve.D_201))
+	baseRun(t, PairingGen(D_201))
 }
 
 func TestTypeD_224Curve(t *testing.T) {
-	baseRun(t, utils.PairingGen(curve.D_224))
+	baseRun(t, PairingGen(D_224))
 }
 
 func TestTypeD_105171_196_185Curve(t *testing.T) {
-	baseRun(t, utils.PairingGen(curve.D_105171_196_185))
+	baseRun(t, PairingGen(D_105171_196_185))
 }
 
 func TestTypeD_277699_175_167Curve(t *testing.T) {
-	baseRun(t, utils.PairingGen(curve.D_277699_175_167))
+	baseRun(t, PairingGen(D_277699_175_167))
 }
 
 func TestTypeD_278027_190_181Curve(t *testing.T) {
-	baseRun(t, utils.PairingGen(curve.D_278027_190_181))
+	baseRun(t, PairingGen(D_278027_190_181))
 }
 
 func TestTypeECurve(t *testing.T) {
-	baseRun(t, utils.PairingGen(curve.E))
+	baseRun(t, PairingGen(E))
 }
 
 func TestTypeFCurve(t *testing.T) {
-	baseRun(t, utils.PairingGen(curve.F))
+	baseRun(t, PairingGen(F))
 }
 
 func TestTypeSM_9Curve(t *testing.T) {
-	baseRun(t, utils.PairingGen(curve.SM_9))
+	baseRun(t, PairingGen(SM_9))
 }
 
 func TestTypeG_149Curve(t *testing.T) {
-	baseRun(t, utils.PairingGen(curve.G_149))
+	baseRun(t, PairingGen(G_149))
 }
