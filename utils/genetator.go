@@ -31,3 +31,8 @@ func GenerateBigPrime(bitLen int64) *big.Int {
 
 	return p
 }
+
+func GetZq(q *big.Int) *big.Int{
+	ran := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return new(big.Int).Rand(ran, q)
+}
