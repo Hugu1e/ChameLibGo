@@ -1,4 +1,4 @@
-package IB_CH_KEF_CZS_2014
+package IB_CH_ZSS_S1_2003
 
 import (
 	"fmt"
@@ -9,64 +9,47 @@ import (
 
 func run_scheme(t *testing.T, curve curve.Curve, swap bool){
 	pp, msk := SetUp(curve, swap)
-
 	ID1 := pp.GetZrElement()
 	ID2 := pp.GetZrElement()
 	if ID1.Equals(ID2) {
 		t.Errorf("ID1 == ID2")
 	}
-
 	m1 := pp.GetZrElement()
 	m2 := pp.GetZrElement()
 	if m1.Equals(m2) {
 		t.Errorf("m1 == m2")
 	}
-
-	L1 := pp.GetZrElement()
-	L2 := pp.GetZrElement()
-	if L1.Equals(L2) {
-		t.Errorf("L1 == L2")
-	}
-
 	sk1 := KeyGen(pp, msk, ID1)
 	sk2 := KeyGen(pp, msk, ID2)
 	if sk1.S_ID.Equals(&sk2.S_ID) {
 		t.Errorf("sk1 == sk2")
 	}
-
-	h1, r1 := Hash(pp, ID1, L1, m1)
-	if !Check(h1, r1, pp, L1, m1) {
-		t.Errorf("H(L1, m1) invalid")
+	h1, r1 := Hash(pp, ID1, m1)
+	if !Check(h1, r1, pp, ID1, m1) {
+		t.Errorf("H(ID1, m1) invalid")
 	}
-	if Check(h1, r1, pp, L2, m1) {
-		t.Errorf("H(L2, m1) valid")
+	if Check(h1, r1, pp, ID2, m1) {
+		t.Errorf("H(ID2, m1) valid")
 	}
-	if Check(h1, r1, pp, L1, m2) {
-		t.Errorf("H(L1, m2) valid")
+	if Check(h1, r1, pp, ID1, m2) {
+		t.Errorf("H(ID1, m2) valid")
 	}
-
-	h2, r2 := Hash(pp, ID2, L2, m2)
-	if !Check(h2, r2, pp, L2, m2) {
-		t.Errorf("H(L2, m2) invalid")
+	h2, r2 := Hash(pp, ID2, m2)
+	if !Check(h2, r2, pp, ID2, m2) {
+		t.Errorf("H(ID2, m2) invalid")
 	}
-	if Check(h2, r2, pp, L1, m2) {
-		t.Errorf("H(L1, m2) valid")
+	if Check(h2, r2, pp, ID1, m2) {
+		t.Errorf("H(ID1, m2) valid")
 	}
-	if Check(h2, r2, pp, L2, m1) {
-		t.Errorf("H(L2, m1) valid")
+	if Check(h2, r2, pp, ID2, m1) {
+		t.Errorf("H(ID2, m1) valid")
 	}
-
-	r1_p := Adapt(r1, pp, sk1, L1, m1, m2)
-	if !Check(h1, r1_p, pp, L1, m2) {
-		t.Errorf("Adapt(L1, m2) invalid")
+	r1_p := Adapt(r1, pp, sk1, m1, m2)
+	if !Check(h1, r1_p, pp, ID1, m2) {
+		t.Errorf("Adapt(ID1, m2) invalid")
 	}
-	if Check(h1, r1_p, pp, L1, m1) {
-		t.Errorf("Adapt(L1, m1) valid")
-	}
-
-	r1_p = Adapt(r1, pp, sk1, L2, m1, m2)
-	if Check(h1, r1_p, pp, L2, m2) {
-		t.Errorf("Adapt(L2, m2) valid")
+	if Check(h1, r1_p, pp, ID1, m1) {
+		t.Errorf("Adapt(ID1, m1) valid")
 	}
 }
 
