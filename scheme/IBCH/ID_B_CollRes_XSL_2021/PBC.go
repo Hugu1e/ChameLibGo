@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Hugu1e/ChameLibGo/curve"
+	"github.com/Hugu1e/ChameLibGo/utils"
 	"github.com/Nik-U/pbc"
 )
 
@@ -124,11 +125,11 @@ func SetUp(curveName curve.Curve, n int, swapG1G2 bool) (*PublicParam, *MasterSe
 	alpha := SP.GetZrElement()
 	SP.G = *SP.GetG1Element()
 	SP.G_2 = *SP.GetG2Element()
-	SP.G_1 = *powZn(&SP.G, alpha)
+	SP.G_1 = *utils.POWZN(&SP.G, alpha)
 	for i := 0; i <= n; i++ {
 		SP.U[i] = *SP.GetG2Element()
 	}
-	msk.G_2_alpha = *powZn(&SP.G_2, alpha)
+	msk.G_2_alpha = *utils.POWZN(&SP.G_2, alpha)
 
 	return SP, msk
 }
@@ -143,8 +144,8 @@ func KeyGen(SP *PublicParam, msk *MasterSecretKey, ID *Identity) *SecretKey {
 			tmp.ThenMul(&SP.U[i])
 		}
 	}
-	sk.Tk_1 = *mul(&msk.G_2_alpha, tmp.ThenPowZn(t))
-	sk.Tk_2 = *powZn(&SP.G, t)
+	sk.Tk_1 = *utils.MUL(&msk.G_2_alpha, tmp.ThenPowZn(t))
+	sk.Tk_2 = *utils.POWZN(&SP.G, t)
 
 	return sk
 }
@@ -167,25 +168,9 @@ func Check(H *HashValue, R *Randomness, SP *PublicParam, ID *Identity, m *pbc.El
 func Adapt(R *Randomness, sk *SecretKey, m, mp *pbc.Element) *Randomness {
 	Rp := new(Randomness)
 
-	deltaM := sub(m, mp)
-	Rp.R_1 = *mul(&R.R_1, powZn(&sk.Tk_1, deltaM))
-	Rp.R_2 = *mul(&R.R_2, powZn(&sk.Tk_2, deltaM))
+	deltaM := utils.SUB(m, mp)
+	Rp.R_1 = *utils.MUL(&R.R_1, utils.POWZN(&sk.Tk_1, deltaM))
+	Rp.R_2 = *utils.MUL(&R.R_2, utils.POWZN(&sk.Tk_2, deltaM))
 
 	return Rp
-}
-
-func powZn(x, i *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().PowZn(x, i)
-}
-func mul(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Mul(x, y)
-}
-func div(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Div(x, y)
-}
-func add(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Add(x, y)
-}
-func sub(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Sub(x, y)
 }

@@ -47,7 +47,7 @@ type Randomness struct {
 
 func getHashValue(R *Randomness, sp *PublicParam, ID, m *pbc.Element) *pbc.Element {
 	temp1 := sp.pairing(&sp.P, &sp.P)
-	temp2 := sp.pairing(powZn(&sp.P, sp.H1(ID)).ThenMul(&sp.P_pub), &R.R)
+	temp2 := sp.pairing(utils.POWZN(&sp.P, sp.H1(ID)).ThenMul(&sp.P_pub), &R.R)
 	return temp1.ThenMul(temp2).ThenPowZn(sp.H1(m))
 }
 
@@ -62,13 +62,13 @@ func SetUp(curveName curve.Curve) (*PublicParam, *MasterSecretKey) {
 	msk := &MasterSecretKey{
 		S: *sp.GetZrElement(),
 	}
-	sp.P_pub = *powZn(&sp.P, &msk.S)
+	sp.P_pub = *utils.POWZN(&sp.P, &msk.S)
 	return sp, msk
 }
 
 func KeyGen(sp *PublicParam, msk *MasterSecretKey, ID *pbc.Element) *SecretKey {
 	return &SecretKey{
-		S_ID: *powZn(&sp.P, invert(add(&msk.S, sp.H1(ID)))),
+		S_ID: *utils.POWZN(&sp.P, utils.INVERT(utils.ADD(&msk.S, sp.H1(ID)))),
 	}
 }
 
@@ -90,26 +90,7 @@ func Adapt(R *Randomness, sp *PublicParam, sk *SecretKey, m, m_p *pbc.Element) *
 	H1m := sp.H1(m)
 	H1m_p := sp.H1(m_p)
 	R_p := &Randomness{
-		R: *powZn(&sk.S_ID, sub(H1m, H1m_p).ThenDiv(H1m_p)).ThenMul(powZn(&R.R, div(H1m, H1m_p))),
+		R: *utils.POWZN(&sk.S_ID, utils.SUB(H1m, H1m_p).ThenDiv(H1m_p)).ThenMul(utils.POWZN(&R.R, utils.DIV(H1m, H1m_p))),
 	}
 	return R_p
-}
-
-func powZn(x, i *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().PowZn(x, i)
-}
-func mul(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Mul(x, y)
-}
-func div(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Div(x, y)
-}
-func add(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Add(x, y)
-}
-func sub(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Sub(x, y)
-}
-func invert(x *pbc.Element) *pbc.Element {
-	return x.NewFieldElement().Invert(x)
 }

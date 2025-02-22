@@ -93,7 +93,7 @@ func SetUp(curveName curve.Curve, swapG1G2 bool) (*PublicParam, *MasterSecretKey
 
 	SP.P = *SP.GetG2Element()
 	msk.S = *SP.GetZrElement()
-	SP.P_pub = *powZn(&SP.P, &msk.S)
+	SP.P_pub = *utils.POWZN(&SP.P, &msk.S)
 
 	return SP, msk
 }
@@ -123,24 +123,7 @@ func Check(H *HashValue, R *Randomness, SP *PublicParam, ID, m *pbc.Element) boo
 func Adapt(R *Randomness, SP *PublicParam, sk *SecretKey, m, m_p *pbc.Element) *Randomness {
 	R_p := new(Randomness)
 
-	R_p.R = *mul(&R.R, powZn(&sk.S_ID, SP.H1(m).ThenSub(SP.H1(m_p))))
+	R_p.R = *utils.MUL(&R.R, utils.POWZN(&sk.S_ID, SP.H1(m).ThenSub(SP.H1(m_p))))
 
 	return R_p
-}
-
-
-func powZn(x, i *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().PowZn(x, i)
-}
-func mul(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Mul(x, y)
-}
-func div(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Div(x, y)
-}
-func add(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Add(x, y)
-}
-func sub(x, y *pbc.Element) *pbc.Element {
-    return x.NewFieldElement().Sub(x, y)
 }

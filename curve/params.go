@@ -1,5 +1,9 @@
 package curve
 
+import(
+	"github.com/Nik-U/pbc"
+)
+
 type Curve int
 
 const (
@@ -51,4 +55,10 @@ var CurveName = map[Curve]string{
     F:            "F",
     SM_9:         "SM_9",
     G_149:        "G_149",
+}
+
+var GroupName = map[pbc.Field]string{
+	pbc.G1: "G1",
+	pbc.G2: "G2",
+	pbc.GT: "GT",
 }
