@@ -22,3 +22,6 @@ func SUB(x, y *pbc.Element) *pbc.Element {
 func INVERT(x *pbc.Element) *pbc.Element {
 	return x.NewFieldElement().Invert(x)
 }
+func NEG(x *pbc.Element) *pbc.Element {
+    return x.NewFieldElement().Neg(x)
+}
