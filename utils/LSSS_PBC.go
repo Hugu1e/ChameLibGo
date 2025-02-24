@@ -123,13 +123,13 @@ func (m *PBCMatrix) solve(b *PBCVector, S *AttributeList) *PBCVector {
 	for i := range m.M {
 		if tag[i] {
 			for k := range m.M[i] {
-				mat[k][j] = *Copy(&m.M[i][k])
+				mat[k][j] = *COPY(&m.M[i][k])
 			}
 			j++
 		}
 	}
 	for k := range m.M[0] {
-		mat[k][j] = *Copy(&b.V[k])
+		mat[k][j] = *COPY(&b.V[k])
 	}
 	mainCol, i := 0, 0
 	for mainCol < rowCnt {
@@ -146,7 +146,7 @@ func (m *PBCMatrix) solve(b *PBCVector, S *AttributeList) *PBCVector {
 			continue
 		}
 		colIndex[mainCol] = i
-		t := Copy(&mat[i][mainCol])
+		t := COPY(&mat[i][mainCol])
 		for k := mainCol; k < len(mat[i]); k++ {
 			mat[i][k].Div(&mat[i][k], t)
 		}
@@ -154,7 +154,7 @@ func (m *PBCMatrix) solve(b *PBCVector, S *AttributeList) *PBCVector {
 			if i == j || mat[j][mainCol].Is0() {
 				continue
 			}
-			t = Copy(&mat[j][mainCol])
+			t = COPY(&mat[j][mainCol])
 			for k := mainCol; k < len(mat[i]); k++ {
 				mat[j][k].Sub(&mat[j][k], MUL(&mat[i][k], t))
 			}
@@ -164,7 +164,7 @@ func (m *PBCMatrix) solve(b *PBCVector, S *AttributeList) *PBCVector {
 	}
 	for i = 0; i < len(m.M); i++ {
 		if colIndex[i] != -1 {
-			x.V[colRes[i]] = *Copy(&mat[colIndex[i]][rowCnt])
+			x.V[colRes[i]] = *COPY(&mat[colIndex[i]][rowCnt])
 		}
 	}
 

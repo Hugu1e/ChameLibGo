@@ -25,6 +25,14 @@ type PublicParam struct {
 
 	G, Egg    pbc.Element
 }
+func (pp *PublicParam) Copy() *PublicParam {
+	newPP := new(PublicParam)
+	newPP.Pairing = pp.Pairing
+	newPP.Zr = pp.Zr
+	newPP.G = *utils.COPY(&pp.G)
+	newPP.Egg = *utils.COPY(&pp.Egg)
+	return newPP
+}
 func (pp *PublicParam) pairing(g1, g2 *pbc.Element) *pbc.Element {
 	return pp.Pairing.NewGT().Pair(g1, g2)
 }
@@ -115,6 +123,11 @@ type PlainText struct {
 func NewPlainText(pp *PublicParam) *PlainText {
 	pt := new(PlainText)
 	pt.M = *pp.GetGTElement()
+	return pt
+}
+func SetPlainText(m *pbc.Element) *PlainText {
+	pt := new(PlainText)
+	pt.M = *utils.COPY(m)
 	return pt
 }
 func (pt *PlainText) Equals(other *PlainText) bool {

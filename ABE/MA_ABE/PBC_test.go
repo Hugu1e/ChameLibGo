@@ -27,8 +27,6 @@ func run_scheme(t *testing.T, curve curve.Curve, auth_nums int){
 	auths := make([]*Authority, auth_nums)
 	for i := 0; i < auth_nums; i++ {
 		auths[i] = NewAuthority(fmt.Sprintf("theta_a_%d", i))
-		AuthSetup(auths[i], GP)
-		
 	}
 	auths[0].ControlAttr = append(auths[0].ControlAttr, "A")
 	auths[1].ControlAttr = append(auths[1].ControlAttr, "BB")
@@ -36,6 +34,11 @@ func run_scheme(t *testing.T, curve curve.Curve, auth_nums int){
 	auths[3].ControlAttr = append(auths[3].ControlAttr, "DDDD")
 	auths[4].ControlAttr = append(auths[4].ControlAttr, "E")
 	auths[5].ControlAttr = append(auths[5].ControlAttr, "FF")
+
+	for i := 0; i < auth_nums; i++ {
+		AuthSetup(auths[i], GP)
+	}
+
 	for i := 0; i < auth_nums; i++ {
 		PKG.AddPK(auths[i])
 	}

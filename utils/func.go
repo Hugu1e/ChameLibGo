@@ -25,6 +25,6 @@ func INVERT(x *pbc.Element) *pbc.Element {
 func NEG(x *pbc.Element) *pbc.Element {
     return x.NewFieldElement().Neg(x)
 }
-func Copy(x *pbc.Element) *pbc.Element {
+func COPY(x *pbc.Element) *pbc.Element {
     return x.NewFieldElement().Set(x)
 }
