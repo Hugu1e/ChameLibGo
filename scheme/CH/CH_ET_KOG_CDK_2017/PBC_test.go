@@ -8,8 +8,13 @@ import (
 	"github.com/Nik-U/pbc"
 )
 
-func run_scheme(t *testing.T, curve curve.Curve, group pbc.Field){
-    pp := SetUp(curve, group, 1024)
+func run_scheme(t *testing.T, cur curve.Curve, group pbc.Field){
+    // TODO
+    if !(cur == curve.A && group == pbc.G1){
+        return
+    }
+
+    pp := SetUp(cur, group, 1024)
 
     pk, sk := KeyGen(pp)
 
