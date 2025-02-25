@@ -39,10 +39,53 @@ type SecretKey struct {
 	Sk_p    [3]pbc.Element
 }
 
+func (sk *SecretKey) CopyFrom(other *SecretKey) *SecretKey {
+	sk.Attr2id = make(map[string]int)
+	for k, v := range other.Attr2id {
+		sk.Attr2id[k] = v
+	}
+
+	sk.S.CopyFrom(&other.S)
+
+	sk.Sk_y = make([][]pbc.Element, len(other.Sk_y))
+	for i := 0; i < len(other.Sk_y); i++ {
+		sk.Sk_y[i] = make([]pbc.Element, len(other.Sk_y[i]))
+		for j := 0; j < len(other.Sk_y[i]); j++ {
+			sk.Sk_y[i][j] = *utils.COPY(&other.Sk_y[i][j])
+		}
+	}
+
+	for i := 0; i < len(sk.Sk_0); i++ {
+		sk.Sk_0[i] = *utils.COPY(&other.Sk_0[i])
+	}
+
+	for i := 0; i < len(sk.Sk_p); i++ {
+		sk.Sk_p[i] = *utils.COPY(&other.Sk_p[i])
+	}
+
+	return sk
+}
+
 type CipherText struct {
 	Ct_0 [3]pbc.Element
 	Ct   [][]pbc.Element
 	Ct_p pbc.Element
+}
+func (ct *CipherText) CopyFrom(other *CipherText) *CipherText {
+	for i := 0; i < len(other.Ct_0); i++ {
+		ct.Ct_0[i] = *utils.COPY(&other.Ct_0[i])
+	}
+
+	ct.Ct = make([][]pbc.Element, len(other.Ct))
+	for i := 0; i < len(other.Ct); i++ {
+		ct.Ct[i] = make([]pbc.Element, len(other.Ct[i]))
+		for j := 0; j < len(other.Ct[i]); j++ {
+			ct.Ct[i][j] = *utils.COPY(&other.Ct[i][j])
+		}
+	}
+
+	ct.Ct_p = *utils.COPY(&other.Ct_p)
+	return ct
 }
 
 func (ct *CipherText) Equals(ct2 *CipherText) bool {
@@ -76,11 +119,17 @@ func (ct *CipherText) Equals(ct2 *CipherText) bool {
 type PlainText struct {
 	M pbc.Element
 }
-func NewPlainText(pp *PublicParam) *PlainText {
+func NewRandomPlainText(pp *PublicParam) *PlainText {
 	pt := new(PlainText)
 	pt.M = *pp.GP.GetGTElement()
 	return pt
 }
+func NewPlainText(m *pbc.Element) *PlainText {
+	pt := new(PlainText)
+	pt.M = *utils.COPY(m)
+	return pt
+}
+
 
 func (pt *PlainText) PlainText(m *pbc.Element) *PlainText {
 	pt.M = *utils.COPY(m)
@@ -96,6 +145,19 @@ func SetUp(curveName curve.Curve, swap_G1G2 bool) (*PublicParam, *MasterPublicKe
 	SP := new(PublicParam)
 
 	SP.GP.Asymmetry(curveName, swap_G1G2)
+
+	d1 := SP.GP.GetZrElement()
+	d2 := SP.GP.GetZrElement()
+	d3 := SP.GP.GetZrElement()
+
+	mpk, msk := setUp(SP, d1, d2, d3, SP.GP.GetZrElement().Set1())
+	return SP, mpk, msk
+}
+
+func SetUpWithGP(gp *GroupParam.Asymmetry) (*PublicParam, *MasterPublicKey, *MasterSecretKey) {
+	SP := new(PublicParam)
+
+	SP.GP.CopyFrom(gp)
 
 	d1 := SP.GP.GetZrElement()
 	d2 := SP.GP.GetZrElement()
@@ -134,7 +196,7 @@ func KeyGen(SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *util
 	sk := new(SecretKey)
 
 	sk.S = *utils.NewAttributeList()
-	sk.S.Copy(S)
+	sk.S.CopyFrom(S)
 
 	r1 := SP.GP.GetZrElement()
 	r2 := SP.GP.GetZrElement()

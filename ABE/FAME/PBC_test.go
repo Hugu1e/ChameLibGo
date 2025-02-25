@@ -26,8 +26,8 @@ func run_scheme(t *testing.T, curve curve.Curve, swap bool){
 	sk1 := KeyGen(pp, mpk, msk, S1)
 	sk2 := KeyGen(pp, mpk, msk, S2)
 
-	m1 := NewPlainText(pp)
-	m2 := NewPlainText(pp)
+	m1 := NewRandomPlainText(pp)
+	m2 := NewRandomPlainText(pp)
 	if m1.Equals(m2) {
 		t.Error("m1 == m2")
 	}

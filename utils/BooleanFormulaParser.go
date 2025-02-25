@@ -29,7 +29,10 @@ type NodePBC struct {
 type AttributeList struct {
 	Attrs map[string]struct{}
 }
-func (al *AttributeList) Copy(other *AttributeList) {
+func (al *AttributeList) CopyFrom(other *AttributeList) {
+	if al.Attrs == nil {
+		al.Attrs = make(map[string]struct{})
+	}
 	for attr := range other.Attrs {
 		al.Attrs[attr] = struct{}{}
 	}

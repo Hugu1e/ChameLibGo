@@ -13,9 +13,22 @@ import (
 type CipherText struct {
 	Ct []byte
 }
+func (ct *CipherText) CopyFrom(other *CipherText) *CipherText {
+    if len(ct.Ct) < len(other.Ct) {
+        ct.Ct = make([]byte, len(other.Ct))
+    }
+    copy(ct.Ct, other.Ct)
+    return ct
+}
 
 type PlainText struct {
 	Pt []byte
+}
+
+func NewPlainText(m []byte) *PlainText {
+    pt := new(PlainText)
+    copy(pt.Pt, m)
+    return pt
 }
 
 func Encrypt(plaintext *PlainText, key []byte) (*CipherText, error) {
