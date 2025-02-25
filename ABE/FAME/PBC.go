@@ -12,8 +12,11 @@ import (
 type PublicParam struct {
 	GP	GroupParam.Asymmetry
 }
+func (pp *PublicParam) CopyFrom(other *PublicParam) {
+	pp.GP.CopyFrom(&other.GP)
+}
 
-func (pp *PublicParam) h(m string) *pbc.Element {
+func (pp *PublicParam) H(m string) *pbc.Element {
 	return utils.H_String_1_PBC_1(pp.GP.Pairing, pp.GP.G1, m)
 }
 func (pp *PublicParam) NewPBCMatrix() *utils.PBCMatrix {
@@ -26,9 +29,26 @@ func (pp *PublicParam) NewPolicyList() *utils.PolicyList{
 type MasterPublicKey struct {
 	G, H, H_1, H_2, T_1, T_2 pbc.Element
 }
+func (mpk *MasterPublicKey) CopyFrom(other *MasterPublicKey) {
+	mpk.G = *utils.COPY(&other.G)
+	mpk.H = *utils.COPY(&other.H)
+	mpk.H_1 = *utils.COPY(&other.H_1)
+	mpk.H_2 = *utils.COPY(&other.H_2)
+	mpk.T_1 = *utils.COPY(&other.T_1)
+	mpk.T_2 = *utils.COPY(&other.T_2)
+}
 
 type MasterSecretKey struct {
 	B_1, B_2, A_1, A_2, G_d1, G_d2, G_d3 pbc.Element
+}
+func (msk *MasterSecretKey) CopyFrom(other *MasterSecretKey) {
+	msk.B_1 = *utils.COPY(&other.B_1)
+	msk.B_2 = *utils.COPY(&other.B_2)
+	msk.A_1 = *utils.COPY(&other.A_1)
+	msk.A_2 = *utils.COPY(&other.A_2)
+	msk.G_d1 = *utils.COPY(&other.G_d1)
+	msk.G_d2 = *utils.COPY(&other.G_d2)
+	msk.G_d3 = *utils.COPY(&other.G_d3)
 }
 
 type SecretKey struct {
@@ -213,14 +233,14 @@ func KeyGen(SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *util
 		sk.Sk_y[i] = make([]pbc.Element, 3)
 
 		sigma_y := SP.GP.GetZrElement()
-		sk.Sk_y[i][0] = *utils.POWZN(SP.h(y+"11"), utils.MUL(&msk.B_1, r1).ThenDiv(&msk.A_1)).
-			ThenMul(utils.POWZN(SP.h(y+"21"), utils.MUL(&msk.B_2, r2).ThenDiv(&msk.A_1))).
-			ThenMul(utils.POWZN(SP.h(y+"31"), utils.ADD(r1, r2).ThenDiv(&msk.A_1))).
+		sk.Sk_y[i][0] = *utils.POWZN(SP.H(y+"11"), utils.MUL(&msk.B_1, r1).ThenDiv(&msk.A_1)).
+			ThenMul(utils.POWZN(SP.H(y+"21"), utils.MUL(&msk.B_2, r2).ThenDiv(&msk.A_1))).
+			ThenMul(utils.POWZN(SP.H(y+"31"), utils.ADD(r1, r2).ThenDiv(&msk.A_1))).
 			ThenMul(utils.POWZN(&mpk.G, utils.DIV(sigma_y, &msk.A_1)))
 
-		sk.Sk_y[i][1] = *utils.POWZN(SP.h(y+"12"), utils.MUL(&msk.B_1, r1).ThenDiv(&msk.A_2)).
-			ThenMul(utils.POWZN(SP.h(y+"22"), utils.MUL(&msk.B_2, r2).ThenDiv(&msk.A_2))).
-			ThenMul(utils.POWZN(SP.h(y+"32"), utils.ADD(r1, r2).ThenDiv(&msk.A_2))).
+		sk.Sk_y[i][1] = *utils.POWZN(SP.H(y+"12"), utils.MUL(&msk.B_1, r1).ThenDiv(&msk.A_2)).
+			ThenMul(utils.POWZN(SP.H(y+"22"), utils.MUL(&msk.B_2, r2).ThenDiv(&msk.A_2))).
+			ThenMul(utils.POWZN(SP.H(y+"32"), utils.ADD(r1, r2).ThenDiv(&msk.A_2))).
 			ThenMul(utils.POWZN(&mpk.G, utils.DIV(sigma_y, &msk.A_2)))
 
 		sk.Sk_y[i][2] = *utils.POWZN(&mpk.G, utils.NEG(sigma_y))
@@ -229,14 +249,14 @@ func KeyGen(SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *util
 	}
 
 	sigma_p := SP.GP.GetZrElement()
-	sk.Sk_p[0] = *utils.MUL(&msk.G_d1, SP.h("0111").ThenPowZn(utils.MUL(&msk.B_1, r1).ThenDiv(&msk.A_1))).
-		ThenMul(SP.h("0121").ThenPowZn(utils.MUL(&msk.B_2, r2).ThenDiv(&msk.A_1))).
-		ThenMul(SP.h("0131").ThenPowZn(utils.ADD(r1, r2).ThenDiv(&msk.A_1))).
+	sk.Sk_p[0] = *utils.MUL(&msk.G_d1, SP.H("0111").ThenPowZn(utils.MUL(&msk.B_1, r1).ThenDiv(&msk.A_1))).
+		ThenMul(SP.H("0121").ThenPowZn(utils.MUL(&msk.B_2, r2).ThenDiv(&msk.A_1))).
+		ThenMul(SP.H("0131").ThenPowZn(utils.ADD(r1, r2).ThenDiv(&msk.A_1))).
 		ThenMul(utils.POWZN(&mpk.G, utils.DIV(sigma_p, &msk.A_1)))
 
-	sk.Sk_p[1] = *utils.MUL(&msk.G_d2, SP.h("0112").ThenPowZn(utils.MUL(&msk.B_1, r1).ThenDiv(&msk.A_2))).
-		ThenMul(SP.h("0122").ThenPowZn(utils.MUL(&msk.B_2, r2).ThenDiv(&msk.A_2))).
-		ThenMul(SP.h("0132").ThenPowZn(utils.ADD(r1, r2).ThenDiv(&msk.A_2))).
+	sk.Sk_p[1] = *utils.MUL(&msk.G_d2, SP.H("0112").ThenPowZn(utils.MUL(&msk.B_1, r1).ThenDiv(&msk.A_2))).
+		ThenMul(SP.H("0122").ThenPowZn(utils.MUL(&msk.B_2, r2).ThenDiv(&msk.A_2))).
+		ThenMul(SP.H("0132").ThenPowZn(utils.ADD(r1, r2).ThenDiv(&msk.A_2))).
 		ThenMul(utils.POWZN(&mpk.G, utils.DIV(sigma_p, &msk.A_2)))
 
 	sk.Sk_p[2] = *utils.MUL(&msk.G_d3, utils.POWZN(&mpk.G, utils.NEG(sigma_p)))
@@ -265,11 +285,11 @@ func EncryptWithElements(SP *PublicParam, mpk *MasterPublicKey, MSP *utils.PBCMa
 	for i := 0; i < n1; i++ {
 		CT.Ct[i] = make([]pbc.Element, 3)
 		for l := 1; l <= 3; l++ {
-			tmp := SP.h(fmt.Sprintf("%s%d1", MSP.Policy[i], l)).ThenPowZn(s1).
-				ThenMul(SP.h(fmt.Sprintf("%s%d2", MSP.Policy[i], l)).ThenPowZn(s2))
+			tmp := SP.H(fmt.Sprintf("%s%d1", MSP.Policy[i], l)).ThenPowZn(s1).
+				ThenMul(SP.H(fmt.Sprintf("%s%d2", MSP.Policy[i], l)).ThenPowZn(s2))
 			for j := 1; j <= n2; j++ {
-				tmp.ThenMul(SP.h(fmt.Sprintf("0%d%d1", j, l)).ThenPowZn(s1).
-					ThenMul(SP.h(fmt.Sprintf("0%d%d2", j, l)).ThenPowZn(s2)).ThenPowZn(&MSP.M[i][j-1]))
+				tmp.ThenMul(SP.H(fmt.Sprintf("0%d%d1", j, l)).ThenPowZn(s1).
+					ThenMul(SP.H(fmt.Sprintf("0%d%d2", j, l)).ThenPowZn(s2)).ThenPowZn(&MSP.M[i][j-1]))
 			}
 			CT.Ct[i][l-1] = *tmp
 		}
