@@ -29,8 +29,16 @@ type NodePBC struct {
 type AttributeList struct {
 	Attrs map[string]struct{}
 }
+func (al *AttributeList) Copy(other *AttributeList) {
+	for attr := range other.Attrs {
+		al.Attrs[attr] = struct{}{}
+	}
+}
 func NewAttributeList() *AttributeList {
 	return &AttributeList{Attrs: make(map[string]struct{})}
+}
+func (al *AttributeList) Add(attr string) {
+	al.Attrs[attr] = struct{}{}
 }
 func (al *AttributeList) Print() {
 	fmt.Println("AttributeList:")
