@@ -39,6 +39,9 @@ func (pp *PublicParam) pairing(g1, g2 *pbc.Element) *pbc.Element {
 func (pp *PublicParam) H(m string) *pbc.Element {
 	return utils.H_String_1_PBC_1(pp.Pairing, pbc.G1, m)
 }
+func (pp *PublicParam) Ht(m string) *pbc.Element {
+	return utils.H_String_1_PBC_1(pp.Pairing, pbc.Zr, m)
+}
 func (pp *PublicParam) F(m string) *pbc.Element {
 	return utils.H_String_1_PBC_1(pp.Pairing, pbc.G1, m)
 }
@@ -101,6 +104,16 @@ type SecretKey struct {
 type CipherText struct {
 	C_0 pbc.Element
 	C  [][]pbc.Element
+}
+func (ct *CipherText) CopyFrom(other *CipherText) {
+	ct.C_0 = *utils.COPY(&other.C_0)
+	ct.C = make([][]pbc.Element, len(other.C))
+	for i := range ct.C {
+		ct.C[i] = make([]pbc.Element, len(other.C[i]))
+		for j := range ct.C[i] {
+			ct.C[i][j] = *utils.COPY(&other.C[i][j])
+		}
+	}
 }
 
 func (ct *CipherText) IsEqual(other *CipherText) bool {
@@ -185,10 +198,10 @@ func Encrypt(pp *PublicParam, pkg *PublicKeyGroup, msp *utils.PBCMatrix, pt *Pla
 	for i := 1; i < n; i++ {
 		w.V[i] = *pp.GetZrElement()
 	}
-	return encrypt(pp, pkg, msp, pt, v, w, t_x)
+	return Encrypt_2(pp, pkg, msp, pt, v, w, t_x)
 }
 
-func encrypt(pp *PublicParam, pkg *PublicKeyGroup, msp *utils.PBCMatrix, pt *PlainText, v, w, t_x *utils.PBCVector) *CipherText {
+func Encrypt_2(pp *PublicParam, pkg *PublicKeyGroup, msp *utils.PBCMatrix, pt *PlainText, v, w, t_x *utils.PBCVector) *CipherText {
 	ct := new(CipherText)
 
 	l := len(msp.M)
