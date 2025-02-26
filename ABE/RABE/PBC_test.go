@@ -9,8 +9,8 @@ import (
 	"github.com/Hugu1e/ChameLibGo/utils"
 )
 
-func run_scheme(t *testing.T, cur curve.Curve, swap bool, num int) {
-	SP, mpk, msk := SetUp(XNM_2021, cur, swap)
+func run_scheme(t *testing.T, cur curve.Curve, swap bool, num int, ty TYPE) {
+	SP, mpk, msk := SetUp(ty, cur, swap)
 
 	BT := BinaryTree.NewBinaryTree(num)
 	rl := BinaryTree.NewRevokeList()
@@ -43,9 +43,19 @@ func run_scheme(t *testing.T, cur curve.Curve, swap bool, num int) {
 	Revoke(rl, id1, 10)
 	Revoke(rl, id2, 100)
 
-	m1 := NewPlainText(SP.GP.GetGTElement())
+	// m1 := NewPlainText(SP.GP.GetGTElement())
+	// t.Log("m1:", m1.M.String())
+	// m2 := NewPlainText(SP.GP.GetGTElement())
+	var m1 *PlainText
+	var m2 *PlainText
+	if(ty == XNM_2021) {
+		m1 = NewPlainText(SP.GP.GetGTElement())
+		m2 = NewPlainText(SP.GP.GetGTElement())
+	} else if(ty == TMM_2022) {
+		m1 = NewPlainText(SP.GP.GetZrElement())
+		m2 = NewPlainText(SP.GP.GetZrElement())
+	}
 	t.Log("m1:", m1.M.String())
-	m2 := NewPlainText(SP.GP.GetGTElement())
 
 	ct1 := Encrypt(SP, mpk, MSP, m1, 5)
 	ct2 := Encrypt(SP, mpk, MSP, m2, 50)
@@ -111,33 +121,48 @@ func Test_PBC(t *testing.T) {
 		32,
 		64,
 	}
+	types := []TYPE{
+		XNM_2021,
+		TMM_2022,
+	}
 
 	cases := []struct {
 		cur   curve.Curve
 		swap  bool
 		num int
+		ty    TYPE
 	}{}
 
 	for _, c := range curs {
 		for _, s := range swaps {
 			for _, n := range nums {
-				cases = append(cases, struct {
-					cur   curve.Curve
-					swap  bool
-					num int
-				}{
-					cur:   c,
-					swap:  s,
-					num: n,
-				})
+				for _, ty := range types {
+					cases = append(cases, struct {
+						cur   curve.Curve
+						swap  bool
+						num int
+						ty    TYPE
+					}{
+						cur:   c,
+						swap:  s,
+						num: n,
+						ty:    ty,
+					})
+				}
 			}
 		}
 	}
 
 	for i, c := range cases {
 		curveName := curve.CurveName[c.cur]
-		t.Run(fmt.Sprintf("case %d %s swap %v num %d", i+1, curveName, c.swap, c.num), func(t *testing.T) {
-			run_scheme(t, c.cur, c.swap, c.num)
+		typeName := ""
+		if c.ty == XNM_2021 {
+			typeName = "XNM_2021"
+		} else {
+			typeName = "TMM_2022"
+		}
+		t.Run(fmt.Sprintf("case %d %s swap %v num %d type %s", i+1, curveName, c.swap, c.num, typeName), func(t *testing.T) {
+			run_scheme(t, c.cur, c.swap, c.num, c.ty)
 		})
 	}
 

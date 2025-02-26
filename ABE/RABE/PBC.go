@@ -24,6 +24,12 @@ type PublicParam struct {
     Type    TYPE
 }
 
+func (pp *PublicParam) CopyFrom(other *PublicParam) {
+    pp.GP.CopyFrom(&other.GP)
+    pp.Pp_FAME.CopyFrom(&other.Pp_FAME)
+    pp.Type = other.Type
+}
+
 func (pp *PublicParam) H(m string) *pbc.Element {
     if pp.Type == XNM_2021 {
         return pp.Pp_FAME.H("1" + m)
@@ -51,9 +57,29 @@ type SecretKey struct {
     Node_id  int
 }
 
+func (sk *SecretKey) CopyFrom(other *SecretKey) {
+    sk.Sk_FAME.CopyFrom(&other.Sk_FAME)
+
+    sk.Node_id = other.Node_id
+    
+    sk.Sk_theta = make(map[int]pbc.Element)
+    for k, v := range other.Sk_theta {
+        sk.Sk_theta[k] = *utils.COPY(&v)
+    }
+}
+
 type UpdateKey struct {
     T        int
     Ku_theta map[int][2]pbc.Element
+}
+
+func (ku *UpdateKey) CopyFrom(other *UpdateKey) {
+    ku.T = other.T
+
+    ku.Ku_theta = make(map[int][2]pbc.Element)
+    for k, v := range other.Ku_theta {
+        ku.Ku_theta[k] = [2]pbc.Element{*utils.COPY(&v[0]), *utils.COPY(&v[1])}
+    }
 }
 
 func (ku *UpdateKey) AddKey(theta int, k_u_theta_0, k_u_theta_1 *pbc.Element) {
@@ -71,10 +97,25 @@ type DecryptKey struct {
     Sk_0_4  pbc.Element
 }
 
+func (dk *DecryptKey) CopyFrom(other *DecryptKey) {
+    dk.Node_id = other.Node_id
+    dk.T = other.T
+    dk.Sk_FAME.CopyFrom(&other.Sk_FAME)
+    dk.Sk_0_4 = *utils.COPY(&other.Sk_0_4)
+}
+
 type CipherText struct {
     Ct_FAME   FAME.CipherText
     Ct_TMM_2022 []byte
     Ct_0_4   pbc.Element
+}
+func (ct *CipherText) CopyFrom(CT_p *CipherText) {
+    ct.Ct_FAME.CopyFrom(&CT_p.Ct_FAME)
+
+    ct.Ct_0_4 = *utils.COPY(&CT_p.Ct_0_4)
+    
+    ct.Ct_TMM_2022 = make([]byte, len(CT_p.Ct_TMM_2022))
+    copy(ct.Ct_TMM_2022, CT_p.Ct_TMM_2022)
 }
 
 func (ct *CipherText) Equals(CT_p *CipherText) bool {
@@ -101,6 +142,22 @@ func SetUp(t TYPE, curveName curve.Curve, swap_G1G2 bool) (*PublicParam, *Master
     SP := new(PublicParam)
 
     SP.GP.Asymmetry(curveName, swap_G1G2)
+    SP.Type = t
+
+    pp_FAME, mpk_FAME, msk_FAME := FAME.SetUpWithGP(&SP.GP)
+    SP.Pp_FAME.CopyFrom(pp_FAME)
+    mpk.Mpk_FAME.CopyFrom(mpk_FAME)
+    msk.Msk_FAME.CopyFrom(msk_FAME)
+
+    return SP, mpk, msk
+}
+
+func SetUpWithGP(t TYPE, gp *GroupParam.Asymmetry) (*PublicParam, *MasterPublicKey, *MasterSecretKey){
+    mpk := new(MasterPublicKey)
+    msk := new(MasterSecretKey)
+    SP := new(PublicParam)
+
+    SP.GP.CopyFrom(gp)
     SP.Type = t
 
     pp_FAME, mpk_FAME, msk_FAME := FAME.SetUpWithGP(&SP.GP)

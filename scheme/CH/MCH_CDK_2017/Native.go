@@ -10,26 +10,41 @@ import (
 type PublicKey struct {
 	N, E big.Int
 }
-func (pk *PublicKey) CopyFrom(pkRSA *RSA.PublicKey) {
-	pk.N = pkRSA.N
-	pk.E = pkRSA.E
+func (pk *PublicKey) CopyFrom(other *PublicKey) {
+	pk.N.Set(&other.N)
+	pk.E.Set(&other.E)
+}
+func (pk *PublicKey) SetRSA(pkRSA *RSA.PublicKey) {
+	pk.N.Set(&pkRSA.N)
+	pk.E.Set(&pkRSA.E)
 }
 
 type SecretKey struct {
 	P, Q, D big.Int
 }
-func (sk *SecretKey) CopyFrom(skRSA *RSA.SecretKey) {
-	sk.P = skRSA.P
-	sk.Q = skRSA.Q
-	sk.D = skRSA.D
+func (sk *SecretKey) CopyFrom(other *SecretKey) {
+	sk.P.Set(&other.P)
+	sk.Q.Set(&other.Q)
+	sk.D.Set(&other.D)
+}
+func (sk *SecretKey) SetRSA(skRSA *RSA.SecretKey) {
+	sk.P.Set(&skRSA.P)
+	sk.Q.Set(&skRSA.Q)
+	sk.D.Set(&skRSA.D)
 }
 
 type HashValue struct {
 	H big.Int
 }
+func (h *HashValue) CopyFrom(other *HashValue) {
+	h.H.Set(&other.H)
+}
 
 type Randomness struct {
 	R big.Int
+}
+func (r *Randomness) CopyFrom(other *Randomness) {
+	r.R.Set(&other.R)
 }
 
 func H_n(n, m *big.Int) *big.Int {
@@ -45,8 +60,8 @@ func KeyGen(lamuda int64) (*PublicKey, *SecretKey){
 	sk := new(SecretKey)
 
 	pk_RSA, sk_RSA := RSA.KeyGen_2(2*lamuda+1, lamuda)
-	pk.CopyFrom(pk_RSA)
-	sk.CopyFrom(sk_RSA)
+	pk.SetRSA(pk_RSA)
+	sk.SetRSA(sk_RSA)
 
 	return pk, sk
 }
