@@ -104,7 +104,7 @@ func SetUp(curveName curve.Curve, swap_G1G2 bool) (*PublicParam, *MasterPublicKe
 	d2 := SP.GP.GetZrElement()
 	d3 := SP.GP.GetZrElement()
 
-	mpk, msk := setUp(SP, d1, d2, d3, SP.GP.GetZrElement().Set1())
+	mpk, msk := SetUp_d(SP, d1, d2, d3, SP.GP.GetZrElement().Set1())
 	return SP, mpk, msk
 }
 
@@ -117,11 +117,11 @@ func SetUpWithGP(gp *GroupParam.Asymmetry) (*PublicParam, *MasterPublicKey, *Mas
 	d2 := SP.GP.GetZrElement()
 	d3 := SP.GP.GetZrElement()
 
-	mpk, msk := setUp(SP, d1, d2, d3, SP.GP.GetZrElement().Set1())
+	mpk, msk := SetUp_d(SP, d1, d2, d3, SP.GP.GetZrElement().Set1())
 	return SP, mpk, msk
 }
 
-func setUp(SP *PublicParam, d1,d2,d3,alpha *pbc.Element) (*MasterPublicKey, *MasterSecretKey) {
+func SetUp_d(SP *PublicParam, d1,d2,d3,alpha *pbc.Element) (*MasterPublicKey, *MasterSecretKey) {
 	mpk := new(MasterPublicKey)
 	msk := new(MasterSecretKey)
 
@@ -146,17 +146,24 @@ func setUp(SP *PublicParam, d1,d2,d3,alpha *pbc.Element) (*MasterPublicKey, *Mas
 	return mpk, msk
 }
 
-func KeyGen(SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *utils.AttributeList) *SecretKey {
+func KeyGen(SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *utils.AttributeList) *SecretKey{
+	r_1 := SP.GP.GetZrElement()
+	r_2 := SP.GP.GetZrElement()
+	return KeyGenWithElements(SP, mpk, msk, S, r_1, r_2, SP.GP.GetZrElement().Set1())
+}
+
+func KeyGenWithElements(SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *utils.AttributeList, r1, r2, alpha *pbc.Element) *SecretKey {
 	sk := new(SecretKey)
 
 	sk.S = *utils.NewAttributeList()
 	sk.S.CopyFrom(S)
 
-	r1 := SP.GP.GetZrElement()
-	r2 := SP.GP.GetZrElement()
 	sk.Sk_0[0] = utils.POWZN(mpk.H, utils.MUL(msk.B_1, r1))
 	sk.Sk_0[1] = utils.POWZN(mpk.H, utils.MUL(msk.B_2, r2))
-	sk.Sk_0[2] = utils.POWZN(mpk.H, utils.ADD(r1, r2))
+	sk.Sk_0[2] = utils.POWZN(mpk.H, utils.ADD(r1, r2).ThenDiv(alpha))
+
+	alpha_a_1 := utils.MUL(alpha, msk.A_1)
+	alpha_a_2 := utils.MUL(alpha, msk.A_2)
 
 	sk.Attr2id = make(map[string]int)
 	sk.Sk_y = make([][]*pbc.Element, len(S.Attrs))
@@ -169,13 +176,13 @@ func KeyGen(SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *util
 		sigma_y := SP.GP.GetZrElement()
 		sk.Sk_y[i][0] = utils.POWZN(SP.H(y+"11"), utils.MUL(msk.B_1, r1).ThenDiv(msk.A_1)).
 			ThenMul(utils.POWZN(SP.H(y+"21"), utils.MUL(msk.B_2, r2).ThenDiv(msk.A_1))).
-			ThenMul(utils.POWZN(SP.H(y+"31"), utils.ADD(r1, r2).ThenDiv(msk.A_1))).
-			ThenMul(utils.POWZN(mpk.G, utils.DIV(sigma_y, msk.A_1)))
+			ThenMul(utils.POWZN(SP.H(y+"31"), utils.ADD(r1, r2).ThenDiv(alpha_a_1))).
+			ThenMul(utils.POWZN(mpk.G, utils.DIV(sigma_y, alpha_a_1)))
 
 		sk.Sk_y[i][1] = utils.POWZN(SP.H(y+"12"), utils.MUL(msk.B_1, r1).ThenDiv(msk.A_2)).
 			ThenMul(utils.POWZN(SP.H(y+"22"), utils.MUL(msk.B_2, r2).ThenDiv(msk.A_2))).
-			ThenMul(utils.POWZN(SP.H(y+"32"), utils.ADD(r1, r2).ThenDiv(msk.A_2))).
-			ThenMul(utils.POWZN(mpk.G, utils.DIV(sigma_y, msk.A_2)))
+			ThenMul(utils.POWZN(SP.H(y+"32"), utils.ADD(r1, r2).ThenDiv(alpha_a_2))).
+			ThenMul(utils.POWZN(mpk.G, utils.DIV(sigma_y, alpha_a_2)))
 
 		sk.Sk_y[i][2] = utils.POWZN(mpk.G, utils.NEG(sigma_y))
 
@@ -185,13 +192,13 @@ func KeyGen(SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *util
 	sigma_p := SP.GP.GetZrElement()
 	sk.Sk_p[0] = utils.MUL(msk.G_d1, SP.H("0111").ThenPowZn(utils.MUL(msk.B_1, r1).ThenDiv(msk.A_1))).
 		ThenMul(SP.H("0121").ThenPowZn(utils.MUL(msk.B_2, r2).ThenDiv(msk.A_1))).
-		ThenMul(SP.H("0131").ThenPowZn(utils.ADD(r1, r2).ThenDiv(msk.A_1))).
-		ThenMul(utils.POWZN(mpk.G, utils.DIV(sigma_p, msk.A_1)))
+		ThenMul(SP.H("0131").ThenPowZn(utils.ADD(r1, r2).ThenDiv(alpha_a_1))).
+		ThenMul(utils.POWZN(mpk.G, utils.DIV(sigma_p, alpha_a_1)))
 
 	sk.Sk_p[1] = utils.MUL(msk.G_d2, SP.H("0112").ThenPowZn(utils.MUL(msk.B_1, r1).ThenDiv(msk.A_2))).
 		ThenMul(SP.H("0122").ThenPowZn(utils.MUL(msk.B_2, r2).ThenDiv(msk.A_2))).
-		ThenMul(SP.H("0132").ThenPowZn(utils.ADD(r1, r2).ThenDiv(msk.A_2))).
-		ThenMul(utils.POWZN(mpk.G, utils.DIV(sigma_p, msk.A_2)))
+		ThenMul(SP.H("0132").ThenPowZn(utils.ADD(r1, r2).ThenDiv(alpha_a_2))).
+		ThenMul(utils.POWZN(mpk.G, utils.DIV(sigma_p, alpha_a_2)))
 
 	sk.Sk_p[2] = utils.MUL(msk.G_d3, utils.POWZN(mpk.G, utils.NEG(sigma_p)))
 
