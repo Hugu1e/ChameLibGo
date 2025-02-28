@@ -58,11 +58,12 @@ func (m *PBCMatrix) GetOneElement() *pbc.Element {
 }
 
 type PBCVector struct {
-	V []pbc.Element
+	V []*pbc.Element
 }
+
 func NewPBCVector(n int) *PBCVector {
 	return &PBCVector{
-		V: make([]pbc.Element, n),
+		V: make([]*pbc.Element, n),
 	}
 }
 
@@ -76,16 +77,16 @@ func (matrix *PBCMatrix) Resize(n, m int) {
 func (m *PBCMatrix) Prodith(y *PBCVector, i int) *pbc.Element {
 	res := m.GetNewElement().Set0()
 	for j := range m.M[i] {
-		res.Add(res, MUL(&y.V[j], &m.M[i][j]))
+		res.Add(res, MUL(y.V[j], &m.M[i][j]))
 	}
 	return res
 }
 
 func (m *PBCMatrix) Solve(S *AttributeList) *PBCVector {
-	b := &PBCVector{V: make([]pbc.Element, len(m.M[0]))}
-	b.V[0] = *m.GetOneElement()
+	b := &PBCVector{V: make([]*pbc.Element, len(m.M[0]))}
+	b.V[0] = m.GetOneElement()
 	for i := 1; i < len(m.M[0]); i++ {
-		b.V[i] = *m.GetZeroElement()
+		b.V[i] = m.GetZeroElement()
 	}
 	return m.solve(b, S)
 }
@@ -94,7 +95,7 @@ func (m *PBCMatrix) solve(b *PBCVector, S *AttributeList) *PBCVector {
 	x := NewPBCVector(len(m.M))
 
 	for i := range x.V {
-		x.V[i] = *m.GetZeroElement()
+		x.V[i] = m.GetZeroElement()
 	}
 	if len(b.V) != len(m.M[0]) {
 		return nil
@@ -129,7 +130,7 @@ func (m *PBCMatrix) solve(b *PBCVector, S *AttributeList) *PBCVector {
 		}
 	}
 	for k := range m.M[0] {
-		mat[k][j] = *COPY(&b.V[k])
+		mat[k][j] = *COPY(b.V[k])
 	}
 	mainCol, i := 0, 0
 	for mainCol < rowCnt {
@@ -164,7 +165,7 @@ func (m *PBCMatrix) solve(b *PBCVector, S *AttributeList) *PBCVector {
 	}
 	for i = 0; i < len(m.M); i++ {
 		if colIndex[i] != -1 {
-			x.V[colRes[i]] = *COPY(&mat[colIndex[i]][rowCnt])
+			x.V[colRes[i]] = COPY(&mat[colIndex[i]][rowCnt])
 		}
 	}
 

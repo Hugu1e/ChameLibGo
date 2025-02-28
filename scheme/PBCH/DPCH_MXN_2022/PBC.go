@@ -15,23 +15,23 @@ import (
 )
 
 type PublicParam struct {
-	GP_MA_ABE MA_ABE.PublicParam
-	pp_DS     BLS.PublicParam
-	lamuda   int64
+	GP_MA_ABE	MA_ABE.PublicParam
+	pp_DS		BLS.PublicParam
+	lamuda		int64
 }
 
 type MasterPublicKey struct {
-	pk_CH CH_ET_BC_CDK_2017.PublicKey
-	pk_DS BLS.PublicKey
+	pk_CH		CH_ET_BC_CDK_2017.PublicKey
+	pk_DS		BLS.PublicKey
 }
 
 type MasterSecretKey struct {
-	sk_CH CH_ET_BC_CDK_2017.SecretKey
-	sk_DS BLS.SecretKey
+	sk_CH		CH_ET_BC_CDK_2017.SecretKey
+	sk_DS		BLS.SecretKey
 }
 
 type Authority struct {
-	MA_ABE_Auth MA_ABE.Authority
+	MA_ABE_Auth	MA_ABE.Authority
 }
 
 func NewAuthority(theta string) *Authority {
@@ -41,10 +41,10 @@ func NewAuthority(theta string) *Authority {
 }
 
 type Modifier struct {
-	gid     string
-	sk_gid  CH_ET_BC_CDK_2017.SecretKey
-	sigma_gid BLS.Signature
-	sk_gid_A MA_ABE.SecretKey
+	gid			string
+	sk_gid		CH_ET_BC_CDK_2017.SecretKey
+	sigma_gid	BLS.Signature
+	sk_gid_A	MA_ABE.SecretKey
 }
 
 func NewModifier(gid string) *Modifier {
@@ -68,9 +68,9 @@ func (skg *SecretKeyGroup) AddSK(mod *Modifier) {
 }
 
 type HashValue struct {
-	H     CH_ET_BC_CDK_2017.HashValue
-	C_SE  SE.CipherText
-	C_MA_ABE MA_ABE.CipherText
+	H			CH_ET_BC_CDK_2017.HashValue
+	C_SE		SE.CipherText
+	C_MA_ABE	MA_ABE.CipherText
 }
 
 type Randomness struct {
@@ -78,7 +78,7 @@ type Randomness struct {
 }
 
 type EncText struct {
-	K pbc.Element
+	K *pbc.Element
 }
 
 type PlaText struct {
@@ -94,7 +94,7 @@ func Encode(pairing *pbc.Pairing, P *PlaText) *EncText {
 	copy(tmp[2:], P.k)
 	tmp[pairing.GTLength()/2+1] = byte(len(P.r))
 	copy(tmp[pairing.GTLength()/2+2:], P.r)
-	K.K = *pairing.NewGT().SetBytes(tmp)
+	K.K = pairing.NewGT().SetBytes(tmp)
 	return K
 }
 
@@ -125,23 +125,24 @@ func genEncMAABE(c_MA_ABE *MA_ABE.CipherText, pt_MA_ABE *MA_ABE.PlainText, PKG *
 
 	t_x := utils.NewPBCVector(l1)
 	for i := 1; i <= l1; i++ {
-		t_x.V[i-1] = *pp.GP_MA_ABE.Ht(fmt.Sprintf("%s%s0%d", string(r_t), MSP.Formula, i))
+		t_x.V[i-1] = pp.GP_MA_ABE.Ht(fmt.Sprintf("%s%s0%d", string(r_t), MSP.Formula, i))
 	}
 
 	v := utils.NewPBCVector(l2)
-	v.V[0] = *pp.GP_MA_ABE.Ht(fmt.Sprintf("%s%s", string(r_t), MSP.Formula))
+	v.V[0] = pp.GP_MA_ABE.Ht(fmt.Sprintf("%s%s", string(r_t), MSP.Formula))
 	for i := 2; i <= l2; i++ {
-		v.V[i-1] = *pp.GP_MA_ABE.Ht(fmt.Sprintf("%s%s1%d", string(r_t), MSP.Formula, i))
+		v.V[i-1] = pp.GP_MA_ABE.Ht(fmt.Sprintf("%s%s1%d", string(r_t), MSP.Formula, i))
 	}
 
 	w := utils.NewPBCVector(l2)
-	w.V[0] = *pp.GP_MA_ABE.GetZrElement().Set0()
+	w.V[0] = pp.GP_MA_ABE.GetZrElement().Set0()
 	for i := 2; i <= l2; i++ {
-		w.V[i-1] = *pp.GP_MA_ABE.Ht(fmt.Sprintf("%s%s2%d", string(r_t), MSP.Formula, i))
+		w.V[i-1] = pp.GP_MA_ABE.Ht(fmt.Sprintf("%s%s2%d", string(r_t), MSP.Formula, i))
 	}
 
 	ct := MA_ABE.Encrypt_2(&pp.GP_MA_ABE, &PKG.MA_ABE_PKG, MSP, pt_MA_ABE, v, w, t_x)
-	c_MA_ABE.CopyFrom(ct)
+	c_MA_ABE.C_0 = ct.C_0
+	c_MA_ABE.C = ct.C
 }
 
 func SetUp(curveName curve.Curve, lamuda int64) (*PublicParam, *MasterPublicKey, *MasterSecretKey) {
@@ -223,14 +224,14 @@ func Adapt(H *HashValue, R *Randomness, PKG *PublicKeyGroup, SKG *SecretKeyGroup
 	enc := EncText{K: pt_MA_ABE.M}
 	pla := Decode(&enc)
 	genEncMAABE(&ct_MA_ABE, pt_MA_ABE, PKG, MSP, pp, pla.r)
-	if !ct_MA_ABE.IsEqual(&H.C_MA_ABE) {
+	if !ct_MA_ABE.Equals(&H.C_MA_ABE) {
 		panic("illegal decrypt")
 	}
 
 	etd := CH_ET_BC_CDK_2017.ETrapdoor{}
 
 	pt_SE, _ := SE.Decrypt(&H.C_SE, pla.k)
-	etd.Sk_ch_2.D = *new(big.Int).SetBytes(pt_SE.Pt)
+	etd.Sk_ch_2.D = new(big.Int).SetBytes(pt_SE.Pt)
 
 	R_p.R = *CH_ET_BC_CDK_2017.Adapt(&H.H, &R.R, &etd, &pk.pk_CH, &sk.sk_CH, m, m_p)
 

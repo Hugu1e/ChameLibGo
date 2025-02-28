@@ -10,34 +10,17 @@ type PublicKey struct {
 	Pk_ch_1 MCH_CDK_2017.PublicKey
 }
 
-func (pk *PublicKey) CopyFrom(other *PublicKey) {
-	pk.Pk_ch_1.CopyFrom(&other.Pk_ch_1)
-}
-
 type SecretKey struct {
 	Sk_Ch_1 MCH_CDK_2017.SecretKey
-}
-
-func (sk *SecretKey) CopyFrom(other *SecretKey) {
-	sk.Sk_Ch_1.CopyFrom(&other.Sk_Ch_1)
 }
 
 type HashValue struct {
 	H_1, H_2 MCH_CDK_2017.HashValue
 	Pk_ch_2 MCH_CDK_2017.PublicKey
 }
-func (h *HashValue) CopyFrom(other *HashValue) {
-	h.H_1.CopyFrom(&other.H_1)
-	h.H_2.CopyFrom(&other.H_2)
-	h.Pk_ch_2.CopyFrom(&other.Pk_ch_2)
-}
 
 type Randomness struct {
 	R_1, R_2 MCH_CDK_2017.Randomness
-}
-func (r *Randomness) CopyFrom(other *Randomness) {
-	r.R_1.CopyFrom(&other.R_1)
-	r.R_2.CopyFrom(&other.R_2)
 }
 
 type ETrapdoor struct {
@@ -47,6 +30,7 @@ type ETrapdoor struct {
 func KeyGen(lamuda int64) (*PublicKey, *SecretKey){
 	pk := new(PublicKey)
 	sk := new(SecretKey)
+	
 	pk_ch_1, sk_Ch_1 := MCH_CDK_2017.KeyGen(lamuda)
 	pk.Pk_ch_1 = *pk_ch_1
 	sk.Sk_Ch_1 = *sk_Ch_1

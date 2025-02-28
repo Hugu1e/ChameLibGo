@@ -7,12 +7,12 @@ import (
 )
 
 type PublicParam struct {
-	Pairing   *pbc.Pairing
-	Zr, G1, G2, GT pbc.Field
+	Pairing			*pbc.Pairing
+	Zr, G1, G2, GT	pbc.Field
 
-	SwapG1G2  bool
+	SwapG1G2		bool
 
-	G         pbc.Element
+	G				*pbc.Element
 }
 
 func (pp *PublicParam) pairing(g1, g2 *pbc.Element) *pbc.Element {
@@ -42,19 +42,19 @@ func (pp *PublicParam) GetZrElement() *pbc.Element {
 }
 
 type SecretKey struct {
-	Alpha pbc.Element
+	Alpha *pbc.Element
 }
 
 type PublicKey struct {
-	H pbc.Element
+	H *pbc.Element
 }
 
 type Signature struct {
-	SigmaM pbc.Element
+	SigmaM *pbc.Element
 }
 
 func (s *Signature) Equals(sign *Signature) bool {
-	return s.SigmaM.Equals(&sign.SigmaM)
+	return s.SigmaM.Equals(sign.SigmaM)
 }
 
 func SetUp(curveName curve.Curve, swapG1G2 bool) *PublicParam {
@@ -72,7 +72,7 @@ func SetUp(curveName curve.Curve, swapG1G2 bool) *PublicParam {
 	pp.GT = pbc.GT
 	pp.Zr = pbc.Zr
 
-	pp.G = *pp.GetG2Element()
+	pp.G = pp.GetG2Element()
 
 	return pp
 }
@@ -81,8 +81,8 @@ func KeyGen(pp *PublicParam) (*PublicKey, *SecretKey){
 	pk := new(PublicKey)
 	sk := new(SecretKey)
 
-	sk.Alpha = *pp.GetZrElement()
-	pk.H = *utils.POWZN(&pp.G, &sk.Alpha)
+	sk.Alpha = pp.GetZrElement()
+	pk.H = utils.POWZN(pp.G, sk.Alpha)
 
 	return pk, sk
 }
@@ -90,11 +90,11 @@ func KeyGen(pp *PublicParam) (*PublicKey, *SecretKey){
 func Sign(sk *SecretKey, pp *PublicParam, m string) *Signature {
 	sign := new(Signature)
 
-	sign.SigmaM = *utils.POWZN(pp.H(m), &sk.Alpha)
+	sign.SigmaM = utils.POWZN(pp.H(m), sk.Alpha)
 
 	return sign
 }
 
 func Verify(pp *PublicParam, pk *PublicKey, sign *Signature, m string) bool {
-	return pp.pairing(&sign.SigmaM, &pp.G).Equals(pp.pairing(pp.H(m), &pk.H))
+	return pp.pairing(sign.SigmaM, pp.G).Equals(pp.pairing(pp.H(m), pk.H))
 }

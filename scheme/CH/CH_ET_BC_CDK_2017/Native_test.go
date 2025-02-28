@@ -48,10 +48,12 @@ func Test_Native(t *testing.T) {
 	cases := []struct {
 		lamuda int64
 	}{
+		{32},
+		{64},
+		{128},
 		{256},
 		{512},
 		{1024},
-		{2048},
 	}
 
 	for i, c := range cases {
