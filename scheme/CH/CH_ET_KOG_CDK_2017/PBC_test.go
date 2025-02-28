@@ -9,11 +9,6 @@ import (
 )
 
 func run_scheme(t *testing.T, cur curve.Curve, group pbc.Field){
-    // TODO
-    if !(cur == curve.A && group == pbc.G1){
-        return
-    }
-
     pp := SetUp(cur, group, 1024)
 
     pk, sk := KeyGen(pp)
