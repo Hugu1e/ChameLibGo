@@ -108,7 +108,7 @@ func Test_PBC(t *testing.T) {
 		curve.E,
 	}
 	auth_nums := []int{16, 32, 64}
-	lamudas := []int64{32, 64,128}
+	lamudas := []int64{32, 64, 128}
 
 	cases := []struct {
 		cur curve.Curve

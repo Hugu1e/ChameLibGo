@@ -11,22 +11,22 @@ import (
 )
 
 type PublicParam struct {
-	GP MA_ABE.PublicParam
-	hk CH_ET_BC_CDK_2017.PublicKey
-	tk CH_ET_BC_CDK_2017.SecretKey
-	lamuda int64
+	GP		MA_ABE.PublicParam
+	hk		CH_ET_BC_CDK_2017.PublicKey
+	tk		CH_ET_BC_CDK_2017.SecretKey
+	lamuda	int64
 }
 
 type Authority struct {
-	mtk        MasterSecretKey
-	mhk        PublicKey
+	mtk			MasterSecretKey
+	mhk			PublicKey
 	MA_ABE_Auth MA_ABE.Authority
 }
 
 func NewAuthority(theta string, SP *PublicParam) *Authority {
 	return &Authority{
 		mtk: MasterSecretKey{tk: SP.tk},
-		mhk: PublicKey{GP: *SP.GP.Copy(), hk: SP.hk},
+		mhk: PublicKey{GP: SP.GP, hk: SP.hk},
 		MA_ABE_Auth: *MA_ABE.NewAuthority(theta),
 	}
 }
@@ -53,7 +53,7 @@ type PublicKeyGroup struct {
 
 func (pkg *PublicKeyGroup) AddPK(auth *Authority) {
 	pkg.hk = auth.mhk.hk
-	pkg.GP = *auth.mhk.GP.Copy()
+	pkg.GP = auth.mhk.GP
 	pkg.MA_ABE_PKG.AddPK(&auth.MA_ABE_Auth)
 }
 
@@ -127,7 +127,7 @@ func Hash(MHKS *PublicKeyGroup, MSP *utils.PBCMatrix, m *big.Int, SP *PublicPara
 	H.CHET_H = *h
 	R.CHET_R = *r
 
-	MA_ABE_PT := MA_ABE.SetPlainText(BigInteger2GT(SP.GP.Pairing, &e.Sk_ch_2.D))
+	MA_ABE_PT := MA_ABE.SetPlainText(BigInteger2GT(SP.GP.Pairing, e.Sk_ch_2.D))
 	H.MA_ABE_C = *MA_ABE.Encrypt(&MHKS.GP, &MHKS.MA_ABE_PKG, MSP, MA_ABE_PT)
 
 	return H, R
@@ -146,7 +146,7 @@ func Adapt(H *HashValue, R *Randomness, MHKS *PublicKeyGroup, MSKS *SecretKeyGro
 	MA_ABE_PT := MA_ABE.Decrypt(&MHKS.GP, &MSKS.MA_ABE_SKG, MSP, &H.MA_ABE_C)
 
 	etd := new(CH_ET_BC_CDK_2017.ETrapdoor)
-	etd.Sk_ch_2.D = *GT2BigInteger(&MA_ABE_PT.M)
+	etd.Sk_ch_2.D = GT2BigInteger(MA_ABE_PT.M)
 	R_p.CHET_R = *CH_ET_BC_CDK_2017.Adapt(&H.CHET_H, &R.CHET_R, etd, &MHKS.hk, &MSKS.tk, m, m_p)
 
 	return R_p

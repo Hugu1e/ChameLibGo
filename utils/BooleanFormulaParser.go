@@ -23,7 +23,7 @@ type Node struct {
 
 type NodePBC struct {
 	x   int
-	tag []pbc.Element
+	tag []*pbc.Element
 }
 
 type AttributeList struct {
@@ -232,16 +232,16 @@ func (bfp *BooleanFormulaParser) SetToNativeMatrix() *NativeMatrix {
 func (bfp *BooleanFormulaParser) SetToPBCMatrix(M *PBCMatrix){
 	M.Formula = bfp.formula
 	M.Resize(bfp.n, bfp.m)
-	zeroList := make([]pbc.Element, bfp.m)
+	zeroList := make([]*pbc.Element, bfp.m)
 	for i := range zeroList {
-		zeroList[i] = *M.GetZeroElement()
+		zeroList[i] = M.GetZeroElement()
 	}
 	if bfp.x == -1 {
-		M.M[0][0] = *M.GetOneElement()
+		M.M[0][0] = M.GetOneElement()
 	} else {
-		rt := []NodePBC{{x: bfp.x, tag: make([]pbc.Element, bfp.m)}}
+		rt := []NodePBC{{x: bfp.x, tag: make([]*pbc.Element, bfp.m)}}
 		copy(rt[0].tag, zeroList)
-		rt[0].tag[0] = *M.GetOneElement()
+		rt[0].tag[0] = M.GetOneElement()
 		colCnt := 1
 		for len(rt) > 0 {
 			tmp := rt[0]
@@ -249,20 +249,20 @@ func (bfp *BooleanFormulaParser) SetToPBCMatrix(M *PBCMatrix){
 			if bfp.tokens[tmp.x] == AND {
 				if bfp.range_[tmp.x][0] < 1 {
 					copy(M.M[-bfp.range_[tmp.x][0]], tmp.tag)
-					M.M[-bfp.range_[tmp.x][0]][colCnt] = *M.GetOneElement()
+					M.M[-bfp.range_[tmp.x][0]][colCnt] = M.GetOneElement()
 				} else {
-					tmpL := NodePBC{x: bfp.range_[tmp.x][0], tag: make([]pbc.Element, bfp.m)}
+					tmpL := NodePBC{x: bfp.range_[tmp.x][0], tag: make([]*pbc.Element, bfp.m)}
 					copy(tmpL.tag, tmp.tag)
-					tmpL.tag[colCnt] = *M.GetOneElement()
+					tmpL.tag[colCnt] = M.GetOneElement()
 					rt = append(rt, tmpL)
 				}
 				if bfp.range_[tmp.x][1] < 1 {
 					copy(M.M[-bfp.range_[tmp.x][1]], zeroList)
-					M.M[-bfp.range_[tmp.x][1]][colCnt] = *M.GetOneElement().ThenNeg()
+					M.M[-bfp.range_[tmp.x][1]][colCnt] = M.GetOneElement().ThenNeg()
 				} else {
-					tmpR := NodePBC{x: bfp.range_[tmp.x][1], tag: make([]pbc.Element, bfp.m)}
+					tmpR := NodePBC{x: bfp.range_[tmp.x][1], tag: make([]*pbc.Element, bfp.m)}
 					copy(tmpR.tag, zeroList)
-					tmpR.tag[colCnt] = *M.GetOneElement().ThenNeg()
+					tmpR.tag[colCnt] = M.GetOneElement().ThenNeg()
 					rt = append(rt, tmpR)
 				}
 				colCnt++

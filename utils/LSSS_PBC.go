@@ -10,7 +10,7 @@ type PBCMatrix struct {
 	Pairing *pbc.Pairing
 	G       pbc.Field
 
-	M       [][]pbc.Element
+	M       [][]*pbc.Element
 	Policy  []string
 	Formula string
 }
@@ -68,16 +68,16 @@ func NewPBCVector(n int) *PBCVector {
 }
 
 func (matrix *PBCMatrix) Resize(n, m int) {
-	matrix.M = make([][]pbc.Element, n)
+	matrix.M = make([][]*pbc.Element, n)
 	for i := range matrix.M {
-		matrix.M[i] = make([]pbc.Element, m)
+		matrix.M[i] = make([]*pbc.Element, m)
 	}
 }
 
 func (m *PBCMatrix) Prodith(y *PBCVector, i int) *pbc.Element {
 	res := m.GetNewElement().Set0()
 	for j := range m.M[i] {
-		res.Add(res, MUL(y.V[j], &m.M[i][j]))
+		res.Add(res, MUL(y.V[j], m.M[i][j]))
 	}
 	return res
 }
@@ -124,7 +124,7 @@ func (m *PBCMatrix) solve(b *PBCVector, S *AttributeList) *PBCVector {
 	for i := range m.M {
 		if tag[i] {
 			for k := range m.M[i] {
-				mat[k][j] = *COPY(&m.M[i][k])
+				mat[k][j] = *COPY(m.M[i][k])
 			}
 			j++
 		}
