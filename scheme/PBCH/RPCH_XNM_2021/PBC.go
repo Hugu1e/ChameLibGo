@@ -16,10 +16,10 @@ import (
 )
 
 type PublicParam struct {
-	GP      GroupParam.Asymmetry
+	GP		GroupParam.Asymmetry
 
 	SP_RABE RABE.PublicParam
-	lamuda int64
+	lamuda	int64
 }
 
 func (pp *PublicParam) H(m string) *pbc.Element {
@@ -45,10 +45,6 @@ type UpdateKey struct {
 	Ku_RABE RABE.UpdateKey
 }
 
-func (uk *UpdateKey) CopyFrom(other *UpdateKey) {
-	uk.Ku_RABE.CopyFrom(&other.Ku_RABE)
-}
-
 type DecryptKey struct {
 	Sk_CHET  CH_ET_BC_CDK_2017.SecretKey
 	Dk_RABE  RABE.DecryptKey
@@ -71,15 +67,15 @@ func SetUp(curveName curve.Curve, swap_G1G2 bool, lamuda int64) (*PublicParam, *
 
 	pp.lamuda = lamuda
 
-	pp.GP.Asymmetry(curveName, swap_G1G2)
+	pp.GP.NewAsymmetry(curveName, swap_G1G2)
 	pp_RABE, mpk_RABE, msk_RABE := RABE.SetUpWithGP(RABE.XNM_2021, &pp.GP)
-	pp.SP_RABE.CopyFrom(pp_RABE)
-	mpk.Mpk_RABE.CopyFrom(mpk_RABE)
-	msk.Msk_RABE.CopyFrom(msk_RABE)
+	pp.SP_RABE = *pp_RABE
+	mpk.Mpk_RABE = *mpk_RABE
+	msk.Msk_RABE = *msk_RABE
 
 	pk_CHET, sk_CHET := CH_ET_BC_CDK_2017.KeyGen(lamuda)
-	mpk.Pk_CHET.CopyFrom(pk_CHET)
-	msk.Sk_CHET.CopyFrom(sk_CHET)
+	mpk.Pk_CHET = *pk_CHET
+	msk.Sk_CHET = *sk_CHET
 
 	return pp, mpk, msk
 }
@@ -87,10 +83,10 @@ func SetUp(curveName curve.Curve, swap_G1G2 bool, lamuda int64) (*PublicParam, *
 func KeyGen(st *BinaryTree.BinaryTree, sp *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *utils.AttributeList, id *pbc.Element) *SecretKey {
 	sk := new(SecretKey)
 
-	sk.Sk_CHET.CopyFrom(&msk.Sk_CHET)
+	sk.Sk_CHET = msk.Sk_CHET
 
 	sk_RABE := RABE.KeyGen(st, &sp.SP_RABE, &mpk.Mpk_RABE, &msk.Msk_RABE, S, id)
-	sk.Sk_RABE.CopyFrom(sk_RABE)
+	sk.Sk_RABE = *sk_RABE
 	
 	return sk
 }
@@ -99,7 +95,7 @@ func UpdateKeyGen(sp *PublicParam, mpk *MasterPublicKey, st *BinaryTree.BinaryTr
 	ku := new(UpdateKey)
 
 	ku_RABE := RABE.UpdateKeyGen(&sp.SP_RABE, &mpk.Mpk_RABE, st, rl, t)
-	ku.Ku_RABE.CopyFrom(ku_RABE)
+	ku.Ku_RABE = *ku_RABE
 
 	return ku
 }
@@ -107,10 +103,10 @@ func UpdateKeyGen(sp *PublicParam, mpk *MasterPublicKey, st *BinaryTree.BinaryTr
 func DecryptKeyGen(sp *PublicParam, mpk *MasterPublicKey, sk *SecretKey, ku *UpdateKey, st *BinaryTree.BinaryTree, rl *BinaryTree.RevokeList) *DecryptKey {
 	dk := new(DecryptKey)
 
-	dk.Sk_CHET.CopyFrom(&sk.Sk_CHET)
+	dk.Sk_CHET = sk.Sk_CHET
 
 	dk_RABE := RABE.DecryptKeyGen(&sp.SP_RABE, &mpk.Mpk_RABE, &sk.Sk_RABE, &ku.Ku_RABE, st, rl)
-	dk.Dk_RABE.CopyFrom(dk_RABE)
+	dk.Dk_RABE = *dk_RABE
 
 	return dk
 }
@@ -124,8 +120,8 @@ func Hash(sp *PublicParam, mpk *MasterPublicKey, MSP *utils.PBCMatrix, m *big.In
 	R := new(Randomness)
 
 	h_CHET, r_CHET, etd_CHET := CH_ET_BC_CDK_2017.Hash(&mpk.Pk_CHET, m, sp.lamuda)
-	H.H_CHET.CopyFrom(h_CHET)
-	R.R_CHET.CopyFrom(r_CHET)
+	H.H_CHET = *h_CHET
+	R.R_CHET = *r_CHET
 
 	r := make([]byte, 16)
 	k := make([]byte, 16)
@@ -134,8 +130,8 @@ func Hash(sp *PublicParam, mpk *MasterPublicKey, MSP *utils.PBCMatrix, m *big.In
 	enc := utils.Encode(sp.GP.Pairing, sp.GP.GT, utils.NewPlaText(k, r))
 
 	u := utils.H_2_element_String_3(sp.GP.Pairing, sp.GP.Zr, string(r), MSP.Formula, fmt.Sprintf("%d", t))
-	ct_RABE := RABE.EncryptWithElements(&sp.SP_RABE, &mpk.Mpk_RABE, MSP, RABE.NewPlainText(&enc.K), t, &u.U_1, &u.U_2)
-	H.Ct_RABE.CopyFrom(ct_RABE)
+	ct_RABE := RABE.EncryptWithElements(&sp.SP_RABE, &mpk.Mpk_RABE, MSP, RABE.NewPlainText(enc.K), t, &u.U_1, &u.U_2)
+	H.Ct_RABE = *ct_RABE
 
 	ct_SE, _ := SE.Encrypt(SE.NewPlainText(etd_CHET.Sk_ch_2.D.Bytes()), k)
 	H.Ct_SE.CopyFrom(ct_SE)
@@ -155,7 +151,7 @@ func Adapt(H *HashValue, R *Randomness, sp *PublicParam, mpk *MasterPublicKey, d
 	}
 	pt_RABE := RABE.Decrypt(&sp.SP_RABE, &dk.Dk_RABE, MSP, &H.Ct_RABE)
 
-	pla := utils.Decode(utils.NewEncText(&pt_RABE.M))
+	pla := utils.Decode(utils.NewEncText(pt_RABE.M))
 
 	u := utils.H_2_element_String_3(sp.GP.Pairing, sp.GP.Zr, string(pla.R), MSP.Formula, fmt.Sprintf("%d", dk.Dk_RABE.T))
 
@@ -167,10 +163,10 @@ func Adapt(H *HashValue, R *Randomness, sp *PublicParam, mpk *MasterPublicKey, d
 
 	se_pt, _:= SE.Decrypt(&H.Ct_SE, pla.K)
 	etd := new(CH_ET_BC_CDK_2017.ETrapdoor)
-	etd.Sk_ch_2.D = *new(big.Int).SetBytes(se_pt.Pt)
+	etd.Sk_ch_2.D = new(big.Int).SetBytes(se_pt.Pt)
 
 	r_CHET := CH_ET_BC_CDK_2017.Adapt(&H.H_CHET, &R.R_CHET, etd, &mpk.Pk_CHET, &dk.Sk_CHET, m, m_p)
-	R_p.R_CHET.CopyFrom(r_CHET)
+	R_p.R_CHET = *r_CHET
 
 	return R_p
 }

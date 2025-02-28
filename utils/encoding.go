@@ -3,11 +3,12 @@ package utils
 import "github.com/Nik-U/pbc"
 
 type EncText struct {
-	K pbc.Element
+	K *pbc.Element
 }
+
 func NewEncText(m *pbc.Element) *EncText {
 	et := new(EncText)
-	et.K = *COPY(m)
+	et.K = m
 	return et
 }
 
@@ -18,10 +19,8 @@ type PlaText struct {
 
 func NewPlaText(k, r []byte) *PlaText {
 	pla := new(PlaText)
-	pla.K = make([]byte, len(k))
-	pla.R = make([]byte, len(r))
-	copy(pla.K, k)
-	copy(pla.R, r)
+	pla.K = k
+	pla.R = r
 	return pla
 }
 
@@ -36,13 +35,13 @@ func Encode(pairing *pbc.Pairing, G pbc.Field, P *PlaText) *EncText {
 
 	switch G {
 	case pbc.G1:
-		K.K = *pairing.NewG1().SetBytes(tmp)
+		K.K = pairing.NewG1().SetBytes(tmp)
 	case pbc.G2:
-		K.K = *pairing.NewG2().SetBytes(tmp)
+		K.K = pairing.NewG2().SetBytes(tmp)
 	case pbc.GT:
-		K.K = *pairing.NewGT().SetBytes(tmp)
+		K.K = pairing.NewGT().SetBytes(tmp)
 	case pbc.Zr:
-		K.K = *pairing.NewZr().SetBytes(tmp)
+		K.K = pairing.NewZr().SetBytes(tmp)
 	default:
 		panic("Encode Failed: Unknown Field G")
 	}

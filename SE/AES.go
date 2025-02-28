@@ -27,7 +27,7 @@ type PlainText struct {
 
 func NewPlainText(m []byte) *PlainText {
     pt := new(PlainText)
-    copy(pt.Pt, m)
+    pt.Pt = m
     return pt
 }
 
@@ -92,7 +92,8 @@ func Decrypt(ciphertext *CipherText, key []byte) (*PlainText, error) {
     data = PKCS7UnPadding(data, block.BlockSize())
 
 	pt := new(PlainText)
-	pt.Pt = data
+	pt.Pt = make([]byte, len(data))
+    copy(pt.Pt, data)
 
     return pt, nil
 }

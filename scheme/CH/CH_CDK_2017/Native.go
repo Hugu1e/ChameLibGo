@@ -8,28 +8,19 @@ import (
 )
 
 type PublicKey struct {
-	N, E big.Int
-}
-func (pk *PublicKey) CopyFrom(pk_RSA *RSA.PublicKey) {
-	pk.N = pk_RSA.N
-	pk.E = pk_RSA.E
+	N, E *big.Int
 }
 
 type SecretKey struct {
-	P, Q, D big.Int
-}
-func (sk *SecretKey) CopyFrom(sk_RSA *RSA.SecretKey) {
-	sk.P = sk_RSA.P
-	sk.Q = sk_RSA.Q
-	sk.D = sk_RSA.D
+	P, Q, D *big.Int
 }
 
 type HashValue struct {
-	H big.Int
+	H *big.Int
 }
 
 type Randomness struct {
-	R big.Int
+	R *big.Int
 }
 
 func H_n(n, m1, m2 *big.Int) *big.Int {
@@ -37,7 +28,7 @@ func H_n(n, m1, m2 *big.Int) *big.Int {
 }
 
 func getHashValue(r *Randomness, pk *PublicKey, tau, m *big.Int) *big.Int {
-	return new(big.Int).Mod(new(big.Int).Mul(H_n(&pk.N, tau, m), new(big.Int).Exp(&r.R, &pk.E, &pk.N)), &pk.N)
+	return new(big.Int).Mod(new(big.Int).Mul(H_n(pk.N, tau, m), new(big.Int).Exp(r.R, pk.E, pk.N)), pk.N)
 }
 
 func KeyGen(lamuda int64) (*PublicKey, *SecretKey) {
@@ -45,8 +36,11 @@ func KeyGen(lamuda int64) (*PublicKey, *SecretKey) {
 	sk := new(SecretKey)
 
 	pk_RSA, sk_RSA := RSA.KeyGen_2(lamuda, lamuda)
-	pk.CopyFrom(pk_RSA)
-	sk.CopyFrom(sk_RSA)
+	pk.E = pk_RSA.E
+	pk.N = pk_RSA.N
+	sk.D = sk_RSA.D
+	sk.P = sk_RSA.P
+	sk.Q = sk_RSA.Q
 
 	return pk, sk
 }
@@ -55,8 +49,8 @@ func Hash(pk *PublicKey, tau, m *big.Int) (*HashValue, *Randomness) {
 	h := new(HashValue)
 	r := new(Randomness)
 
-	r.R = *utils.GetZq(&pk.N)
-	h.H = *getHashValue(r, pk, tau, m)
+	r.R = utils.GetZq(pk.N)
+	h.H = getHashValue(r, pk, tau, m)
 
 	return h, r
 }
@@ -68,7 +62,7 @@ func Check(h *HashValue, r *Randomness, pk *PublicKey, tau, m *big.Int) bool {
 func Adapt(r *Randomness, pk * PublicKey, sk *SecretKey, tau, m, tau_p, m_p *big.Int) *Randomness {
 	r_p := new(Randomness)
 
-	r_p.R.Exp(new(big.Int).Mul(getHashValue(r, pk, tau, m), new(big.Int).ModInverse(H_n(&pk.N, tau_p, m_p), &pk.N)), &sk.D, &pk.N)
+	r_p.R = new(big.Int).Exp(new(big.Int).Mul(getHashValue(r, pk, tau, m), new(big.Int).ModInverse(H_n(pk.N, tau_p, m_p), pk.N)), sk.D, pk.N)
 
 	return r_p
 }

@@ -6,22 +6,13 @@ import (
 )
 
 type Asymmetry struct {
-	Pairing   *pbc.Pairing
-	SwapG1G2  bool
+	Pairing			*pbc.Pairing
+	SwapG1G2		bool
 
-	Zr, G1, G2, GT pbc.Field
-}
-func (a *Asymmetry) CopyFrom(other *Asymmetry) *Asymmetry {
-	a.Pairing = other.Pairing
-	a.SwapG1G2 = other.SwapG1G2
-	a.Zr = other.Zr
-	a.G1 = other.G1
-	a.G2 = other.G2
-	a.GT = other.GT
-	return a
+	Zr, G1, G2, GT	pbc.Field
 }
 
-func (a *Asymmetry) Asymmetry(curveName curve.Curve, swapG1G2 bool) *Asymmetry {
+func (a *Asymmetry) NewAsymmetry(curveName curve.Curve, swapG1G2 bool) *Asymmetry {
 	a.Pairing = curve.PairingGen(curveName)
 	a.SwapG1G2 = swapG1G2
 

@@ -12,28 +12,19 @@ type PublicParam struct {
 }
 
 type PublicKey struct {
-	N, E big.Int
-}
-func (pk *PublicKey) CopyFrom(rsa_Pk *RSA.PublicKey){
-	pk.N = rsa_Pk.N
-	pk.E = rsa_Pk.E
+	N, E *big.Int
 }
 
 type SecretKey struct {
-	P, Q, D big.Int
-}
-func (sk *SecretKey) CopyFrom(rsa_Sk *RSA.SecretKey){
-	sk.P = rsa_Sk.P
-	sk.Q = rsa_Sk.Q
-	sk.D = rsa_Sk.D
+	P, Q, D *big.Int
 }
 
 type HashValue struct {
-	H big.Int
+	H *big.Int
 }
 
 type Randomness struct {
-	R big.Int
+	R *big.Int
 }
 
 func H(m *big.Int) *big.Int {
@@ -47,7 +38,7 @@ func C(m *big.Int, bitLen int64) *big.Int {
 func getHashValue(r *Randomness, pk *PublicKey, m, L *big.Int, pp *PublicParam) *big.Int {
 	c := C(L, 2*pp.K - 1)
 	h := C(m, pp.Tau)
-	return new(big.Int).Mod(new(big.Int).Mul(new(big.Int).Exp(c, h, &pk.N), new(big.Int).Exp(&r.R, &pk.E, &pk.N)), &pk.N)
+	return new(big.Int).Mod(new(big.Int).Mul(new(big.Int).Exp(c, h, pk.N), new(big.Int).Exp(r.R, pk.E, pk.N)), pk.N)
 }
 
 func SetUp(tau, k int64) (*PublicParam) {
@@ -63,8 +54,11 @@ func KeyGen(pp *PublicParam) (*PublicKey, *SecretKey) {
 
 
 	RSA_pk, RSA_sk := RSA.KeyGen_2(pp.Tau, pp.K)
-	pk.CopyFrom(RSA_pk)
-	sk.CopyFrom(RSA_sk)
+	pk.E = RSA_pk.E
+	pk.N = RSA_pk.N
+	sk.D = RSA_sk.D
+	sk.P = RSA_sk.P
+	sk.Q = RSA_sk.Q
 
 	return pk, sk
 }
@@ -73,8 +67,8 @@ func Hash(pk *PublicKey, L, m *big.Int, pp *PublicParam) (*HashValue, *Randomnes
 	h := new(HashValue)
 	r := new(Randomness)
 
-	r.R = *utils.GetZq(&pk.N)
-	h.H = *getHashValue(r, pk, m, L, pp)
+	r.R = utils.GetZq(pk.N)
+	h.H = getHashValue(r, pk, m, L, pp)
 
 	return h, r
 }
@@ -89,7 +83,7 @@ func Adapt(r *Randomness, pk *PublicKey, sk *SecretKey, L, m, mp *big.Int, pp *P
 	c := C(L, 2*pp.K - 1)
 	hm := C(m, pp.Tau)
 	hmp := C(mp, pp.Tau)
-	rp.R = *new(big.Int).Mod(new(big.Int).Mul(&r.R,  new(big.Int).Exp(new(big.Int).Exp(c, &sk.D, &pk.N), new(big.Int).Sub(hm, hmp), &pk.N)) , &pk.N)
+	rp.R = new(big.Int).Mod(new(big.Int).Mul(r.R,  new(big.Int).Exp(new(big.Int).Exp(c, sk.D, pk.N), new(big.Int).Sub(hm, hmp), pk.N)) , pk.N)
 
 	return rp
 }

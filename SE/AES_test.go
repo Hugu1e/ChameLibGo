@@ -2,12 +2,14 @@ package SE
 
 import (
 	"bytes"
+	"crypto/rand"
 	"testing"
 )
 
 
 func Test_AES(t *testing.T){
-	key := []byte("1234567812345678") // AES-128
+	key := make([]byte, 16)
+	rand.Read(key)
 
 	plainText := new(PlainText)
     plainText.Pt = []byte("Hello world")

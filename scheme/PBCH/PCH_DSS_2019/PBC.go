@@ -51,9 +51,9 @@ func SetUp(curveName curve.Curve, swap_G1G2 bool, lamuda int64) (*PublicParam, *
 
 	ppPCH.lamuda = lamuda
 
-	ppPCH.GP.Asymmetry(curveName, swap_G1G2)
+	ppPCH.GP.NewAsymmetry(curveName, swap_G1G2)
 	pp_ABE, mpk_ABE, msk_ABE := FAME.SetUpWithGP(&ppPCH.GP)
-	ppPCH.Pp_ABE.GP.CopyFrom(&pp_ABE.GP)
+	ppPCH.Pp_ABE.GP = pp_ABE.GP
 	pkPCH.Mpk_ABE = *mpk_ABE
 	skPCH.Msk_ABE = *msk_ABE
 	
@@ -69,7 +69,7 @@ func KeyGen(ppPCH *PublicParam, pkPCH *MasterPublicKey, skPCH *MasterSecretKey, 
 
 	sk.Sk_CHET = skPCH.Sk_CHET
 	sk_ABE := FAME.KeyGen(&ppPCH.Pp_ABE, &pkPCH.Mpk_ABE, &skPCH.Msk_ABE, S)
-	sk.Sk_ABE.CopyFrom(sk_ABE)
+	sk.Sk_ABE = *sk_ABE
 
 	return sk
 }
@@ -92,8 +92,8 @@ func Hash(ppPCH *PublicParam, pkPCH *MasterPublicKey, MSP *utils.PBCMatrix, m *b
 	pla := utils.NewPlaText(k, r)
 	enc := utils.Encode(ppPCH.GP.Pairing, ppPCH.GP.GT, pla)
 
-	ct_ABE := FAME.EncryptWithElements(&ppPCH.Pp_ABE, &pkPCH.Mpk_ABE, MSP, FAME.NewPlainText(&enc.K), &u.U_1, &u.U_2)
-	H.Ct_ABE.CopyFrom(ct_ABE)
+	ct_ABE := FAME.EncryptWithElements(&ppPCH.Pp_ABE, &pkPCH.Mpk_ABE, MSP, FAME.NewPlainText(enc.K), &u.U_1, &u.U_2)
+	H.Ct_ABE = *ct_ABE
 
 	ct_SE, err := SE.Encrypt(SE.NewPlainText(etd_CHET.Sk_ch_2.D.Bytes()), k)
 	if err != nil {
@@ -113,7 +113,7 @@ func  Adapt(H *HashValue, R *Randomness, ppPCH *PublicParam, pkPCH *MasterPublic
 
 	ptABE := FAME.Decrypt(&ppPCH.Pp_ABE, MSP, &H.Ct_ABE, &sk.Sk_ABE)
 
-	pla := utils.Decode(utils.NewEncText(&ptABE.M))
+	pla := utils.Decode(utils.NewEncText(ptABE.M))
 
 	u := utils.H_2_element_String_2(ppPCH.GP.Pairing, ppPCH.GP.Zr, string(pla.R), MSP.Formula)
 
@@ -130,7 +130,7 @@ func  Adapt(H *HashValue, R *Randomness, ppPCH *PublicParam, pkPCH *MasterPublic
 		panic(err)
 	}
 	etd := new(CH_ET_BC_CDK_2017.ETrapdoor)
-	etd.Sk_ch_2.D.SetBytes(sePT.Pt)
+	etd.Sk_ch_2.D = new(big.Int).SetBytes(sePT.Pt)
 
 	r_CHET := CH_ET_BC_CDK_2017.Adapt(&H.H_CHET, &R.R_CHET, etd, &pkPCH.Pk_CHET, &sk.Sk_CHET, m, mp)
 	Rp.R_CHET = *r_CHET
