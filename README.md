@@ -1,4 +1,7 @@
 # ChameLibGo
+
+![Go](https://github.com/Hugu1e/ChameLibGo/actions/workflows/go.yml/badge.svg)
+
 Go version of https://github.com/Hugu1e/ChameLib
 
 ## Installation
