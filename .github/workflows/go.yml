@@ -1,0 +1,46 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential flex bison libgmp-dev
+
+    - name: Download and install PBC library
+      run: |
+        wget https://crypto.stanford.edu/pbc/files/pbc-0.5.14.tar.gz
+        tar -xzf pbc-0.5.14.tar.gz
+        cd pbc-0.5.14
+        ./configure
+        make
+        sudo make install
+        sudo ldconfig
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.19'
+
+    - name: Tidy modules
+      run: go mod tidy
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
