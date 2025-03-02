@@ -18,9 +18,9 @@ const (
 )
 
 type PublicParam struct {
-    GP      GroupParam.Asymmetry
+    GP      *GroupParam.Asymmetry
 
-    Pp_FAME FAME.PublicParam
+    Pp_FAME *FAME.PublicParam
     Type    TYPE
 }
 
@@ -32,15 +32,15 @@ func (pp *PublicParam) H(m string) *pbc.Element {
 }
 
 type MasterPublicKey struct {
-    Mpk_FAME FAME.MasterPublicKey
+    Mpk_FAME *FAME.MasterPublicKey
 }
 
 type MasterSecretKey struct {
-    Msk_FAME FAME.MasterSecretKey
+    Msk_FAME *FAME.MasterSecretKey
 }
 
 type SecretKey struct {
-    Sk_FAME  FAME.SecretKey
+    Sk_FAME  *FAME.SecretKey
     Sk_theta map[int]*pbc.Element
     Node_id  int
 }
@@ -61,18 +61,18 @@ func (ku *UpdateKey) AddKey(theta int, k_u_theta_0, k_u_theta_1 *pbc.Element) {
 type DecryptKey struct {
     Node_id int
     T       int
-    Sk_FAME FAME.SecretKey
+    Sk_FAME *FAME.SecretKey
     Sk_0_4  *pbc.Element
 }
 
 type CipherText struct {
-    Ct_FAME     FAME.CipherText
+    Ct_FAME     *FAME.CipherText
     Ct_TMM_2022 []byte
     Ct_0_4      *pbc.Element
 }
 
 func (ct *CipherText) Equals(CT_p *CipherText) bool {
-    return ct.Ct_FAME.Equals(&CT_p.Ct_FAME) && ct.Ct_0_4.Equals(CT_p.Ct_0_4)
+    return ct.Ct_FAME.Equals(CT_p.Ct_FAME) && ct.Ct_0_4.Equals(CT_p.Ct_0_4)
 }
 
 type PlainText struct {
@@ -94,13 +94,13 @@ func SetUp(t TYPE, curveName curve.Curve, swap_G1G2 bool) (*PublicParam, *Master
     msk := new(MasterSecretKey)
     SP := new(PublicParam)
 
-    SP.GP.NewAsymmetry(curveName, swap_G1G2)
+    SP.GP = GroupParam.NewAsymmetry(curveName, swap_G1G2)
     SP.Type = t
 
-    pp_FAME, mpk_FAME, msk_FAME := FAME.SetUpWithGP(&SP.GP)
-    SP.Pp_FAME = *pp_FAME
-    mpk.Mpk_FAME = *mpk_FAME
-    msk.Msk_FAME = *msk_FAME
+    pp_FAME, mpk_FAME, msk_FAME := FAME.SetUpWithGP(SP.GP)
+    SP.Pp_FAME = pp_FAME
+    mpk.Mpk_FAME = mpk_FAME
+    msk.Msk_FAME = msk_FAME
 
     return SP, mpk, msk
 }
@@ -110,13 +110,13 @@ func SetUpWithGP(t TYPE, gp *GroupParam.Asymmetry) (*PublicParam, *MasterPublicK
     msk := new(MasterSecretKey)
     SP := new(PublicParam)
 
-    SP.GP = *gp
+    SP.GP = gp
     SP.Type = t
 
-    pp_FAME, mpk_FAME, msk_FAME := FAME.SetUpWithGP(&SP.GP)
-    SP.Pp_FAME = *pp_FAME
-    mpk.Mpk_FAME = *mpk_FAME
-    msk.Msk_FAME = *msk_FAME
+    pp_FAME, mpk_FAME, msk_FAME := FAME.SetUpWithGP(SP.GP)
+    SP.Pp_FAME = pp_FAME
+    mpk.Mpk_FAME = mpk_FAME
+    msk.Msk_FAME = msk_FAME
 
     return SP, mpk, msk
 }
@@ -124,8 +124,8 @@ func SetUpWithGP(t TYPE, gp *GroupParam.Asymmetry) (*PublicParam, *MasterPublicK
 func KeyGen(st *BinaryTree.BinaryTree, SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *utils.AttributeList, id *pbc.Element) *SecretKey {
     sk := new(SecretKey)
 
-    sk_FAME := FAME.KeyGen(&SP.Pp_FAME, &mpk.Mpk_FAME, &msk.Msk_FAME, S)
-    sk.Sk_FAME = *sk_FAME
+    sk_FAME := FAME.KeyGen(SP.Pp_FAME, mpk.Mpk_FAME, msk.Msk_FAME, S)
+    sk.Sk_FAME = sk_FAME
 
     theta := st.Pick(id)
     sk.Node_id = theta
@@ -213,11 +213,11 @@ func EncryptWithElements(SP *PublicParam, mpk *MasterPublicKey, MSP *utils.PBCMa
 
     CT.Ct_0_4 = SP.H(fmt.Sprintf("%d", t)).ThenPowZn(utils.ADD(s_1, s_2))
     if SP.Type == XNM_2021 {
-        ct_FAME := FAME.EncryptWithElements(&SP.Pp_FAME, &mpk.Mpk_FAME, MSP, FAME.NewPlainText(PT.M), s_1, s_2)
-        CT.Ct_FAME = *ct_FAME
+        ct_FAME := FAME.EncryptWithElements(SP.Pp_FAME, mpk.Mpk_FAME, MSP, FAME.NewPlainText(PT.M), s_1, s_2)
+        CT.Ct_FAME = ct_FAME
     } else if SP.Type == TMM_2022 {
-        ct_FAME := FAME.EncryptWithElements(&SP.Pp_FAME, &mpk.Mpk_FAME, MSP, FAME.NewPlainText(SP.GP.GetGTElement().Set1()), s_1, s_2)
-        CT.Ct_FAME = *ct_FAME
+        ct_FAME := FAME.EncryptWithElements(SP.Pp_FAME, mpk.Mpk_FAME, MSP, FAME.NewPlainText(SP.GP.GetGTElement().Set1()), s_1, s_2)
+        CT.Ct_FAME = ct_FAME
 
         b := CT.Ct_FAME.Ct_p.Bytes()
         CT.Ct_TMM_2022 = make([]byte, len(b))
@@ -237,7 +237,7 @@ func EncryptWithElements(SP *PublicParam, mpk *MasterPublicKey, MSP *utils.PBCMa
 func Decrypt(SP *PublicParam, dk *DecryptKey, MSP *utils.PBCMatrix, CT *CipherText) *PlainText {
     PT := new(PlainText)
 
-    pt_FAME := FAME.Decrypt(&SP.Pp_FAME, MSP, &CT.Ct_FAME, &dk.Sk_FAME)
+    pt_FAME := FAME.Decrypt(SP.Pp_FAME, MSP, CT.Ct_FAME, dk.Sk_FAME)
     PT.M = utils.MUL(pt_FAME.M, SP.GP.Pair(CT.Ct_0_4, dk.Sk_0_4))
     if SP.Type == TMM_2022 {
         tmp := utils.INVERT(PT.M).Bytes()

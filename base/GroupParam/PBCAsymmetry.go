@@ -12,7 +12,9 @@ type Asymmetry struct {
 	Zr, G1, G2, GT	pbc.Field
 }
 
-func (a *Asymmetry) NewAsymmetry(curveName curve.Curve, swapG1G2 bool) *Asymmetry {
+func NewAsymmetry(curveName curve.Curve, swapG1G2 bool) *Asymmetry {
+	a := new(Asymmetry)
+
 	a.Pairing = curve.PairingGen(curveName)
 	a.SwapG1G2 = swapG1G2
 

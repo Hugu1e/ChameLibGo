@@ -10,7 +10,7 @@ import (
 )
 
 type PublicParam struct {
-	GP	GroupParam.Asymmetry
+	GP	*GroupParam.Asymmetry
 }
 
 func (pp *PublicParam) H(m string) *pbc.Element {
@@ -35,7 +35,7 @@ type MasterSecretKey struct {
 
 type SecretKey struct {
 	Attr2id map[string]int
-	S       utils.AttributeList
+	S       *utils.AttributeList
 	Sk_y    [][]*pbc.Element
 	Sk_0    [3]*pbc.Element
 	Sk_p    [3]*pbc.Element
@@ -98,7 +98,7 @@ func (pt *PlainText) Equals(pt2 *PlainText) bool {
 func SetUp(curveName curve.Curve, swap_G1G2 bool) (*PublicParam, *MasterPublicKey, *MasterSecretKey) {
 	SP := new(PublicParam)
 
-	SP.GP.NewAsymmetry(curveName, swap_G1G2)
+	SP.GP = GroupParam.NewAsymmetry(curveName, swap_G1G2)
 
 	d1 := SP.GP.GetZrElement()
 	d2 := SP.GP.GetZrElement()
@@ -111,7 +111,7 @@ func SetUp(curveName curve.Curve, swap_G1G2 bool) (*PublicParam, *MasterPublicKe
 func SetUpWithGP(gp *GroupParam.Asymmetry) (*PublicParam, *MasterPublicKey, *MasterSecretKey) {
 	SP := new(PublicParam)
 
-	SP.GP = *gp
+	SP.GP = gp
 
 	d1 := SP.GP.GetZrElement()
 	d2 := SP.GP.GetZrElement()
@@ -155,7 +155,7 @@ func KeyGen(SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *util
 func KeyGenWithElements(SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretKey, S *utils.AttributeList, r1, r2, alpha *pbc.Element) *SecretKey {
 	sk := new(SecretKey)
 
-	sk.S = *utils.NewAttributeList()
+	sk.S = utils.NewAttributeList()
 	sk.S.CopyFrom(S)
 
 	sk.Sk_0[0] = utils.POWZN(mpk.H, utils.MUL(msk.B_1, r1))
@@ -241,7 +241,7 @@ func EncryptWithElements(SP *PublicParam, mpk *MasterPublicKey, MSP *utils.PBCMa
 func Decrypt(SP *PublicParam, MSP *utils.PBCMatrix, CT *CipherText, sk *SecretKey) *PlainText {
 	PT := new(PlainText)
 
-	gamma := MSP.Solve(&sk.S)
+	gamma := MSP.Solve(sk.S)
 	num := utils.COPY(CT.Ct_p)
 	for t := 0; t < 3; t++ {
 		tmp := SP.GP.GetG1Element().Set1()
