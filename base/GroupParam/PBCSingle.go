@@ -26,7 +26,9 @@ func (s *Single) NewSingle(curveName curve.Curve, group pbc.Field) *Single {
 	return s
 }
 
-func (s *Single) NewSingleFromPairing(pairing *pbc.Pairing, group pbc.Field) *Single {
+func NewSingleFromPairing(pairing *pbc.Pairing, group pbc.Field) *Single {
+	s := new(Single)
+
 	s.Pairing = pairing
 
 	s.G = group

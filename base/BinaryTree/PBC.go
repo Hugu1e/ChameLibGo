@@ -26,7 +26,7 @@ func (rl *RevokeList) Add(id *pbc.Element, expireTime int) {
 type BinaryTree struct {
 	EmptyLeafID int
 	Id2Node     map[string]int
-	GTheta      []pbc.Element
+	GTheta      []*pbc.Element
 	TagG        []bool
 	Tag         []bool
 }
@@ -35,7 +35,7 @@ func NewBinaryTree(n int) *BinaryTree {
 	return &BinaryTree{
 		EmptyLeafID: n - 1,
 		Id2Node:     make(map[string]int),
-		GTheta:      make([]pbc.Element, 2*n-1),
+		GTheta:      make([]*pbc.Element, 2*n-1),
 		TagG:        make([]bool, 2*n-1),
 		Tag:         make([]bool, 2*n-1),
 	}
@@ -59,7 +59,7 @@ func (p *BinaryTree) Pick(id *pbc.Element) int {
 
 func (p *BinaryTree) Setg(nodeID int, g *pbc.Element) {
 	p.TagG[nodeID] = true
-	p.GTheta[nodeID] = *utils.COPY(g)
+	p.GTheta[nodeID] = utils.COPY(g)
 }
 
 func (p *BinaryTree) GetUpdateKeyNode(rl *RevokeList, time int) {

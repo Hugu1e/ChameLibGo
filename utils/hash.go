@@ -59,19 +59,19 @@ func H_PBC_3_native_1(m1, m2, m3 *pbc.Element) *big.Int {
 }
 
 type H_2_element struct{
-    U_1, U_2 pbc.Element
+    U_1, U_2 *pbc.Element
 }
 
 func H_2_element_String_2(pairing *pbc.Pairing, G pbc.Field, m1, m2 string) *H_2_element {
     u := new(H_2_element)
-    u.U_1 = *H_String_1_PBC_1(pairing, G, m1 + "|" + m2)
-    u.U_2 = *H_String_1_PBC_1(pairing, G, m2 + "|" + m1)
+    u.U_1 = H_String_1_PBC_1(pairing, G, m1 + "|" + m2)
+    u.U_2 = H_String_1_PBC_1(pairing, G, m2 + "|" + m1)
     return u
 }
 
 func H_2_element_String_3(pairing *pbc.Pairing, G pbc.Field, m1, m2, m3 string) *H_2_element{
     u := new(H_2_element)
-    u.U_1 = *H_String_1_PBC_1(pairing, G, m1 + "|" + m2 + "|" + m3)
-    u.U_2 = *H_String_1_PBC_1(pairing, G, m3 + "|" + m2 + "|" + m1)
+    u.U_1 = H_String_1_PBC_1(pairing, G, m1 + "|" + m2 + "|" + m3)
+    u.U_2 = H_String_1_PBC_1(pairing, G, m3 + "|" + m2 + "|" + m1)
     return u
 }

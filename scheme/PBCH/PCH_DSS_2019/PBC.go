@@ -13,35 +13,35 @@ import (
 )
 
 type PublicParam struct {
-	GP     GroupParam.Asymmetry
-	Pp_ABE FAME.PublicParam
+	GP     *GroupParam.Asymmetry
+	Pp_ABE *FAME.PublicParam
 
 	lamuda int64
 }
 
 type MasterPublicKey struct {
-	Pk_CHET CH_ET_BC_CDK_2017.PublicKey
-	Mpk_ABE FAME.MasterPublicKey
+	Pk_CHET *CH_ET_BC_CDK_2017.PublicKey
+	Mpk_ABE *FAME.MasterPublicKey
 }
 
 type MasterSecretKey struct {
-	Sk_CHET CH_ET_BC_CDK_2017.SecretKey
-	Msk_ABE FAME.MasterSecretKey
+	Sk_CHET *CH_ET_BC_CDK_2017.SecretKey
+	Msk_ABE *FAME.MasterSecretKey
 }
 
 type SecretKey struct {
-	Sk_CHET CH_ET_BC_CDK_2017.SecretKey
-	Sk_ABE  FAME.SecretKey
+	Sk_CHET *CH_ET_BC_CDK_2017.SecretKey
+	Sk_ABE  *FAME.SecretKey
 }
 
 type HashValue struct {
-	H_CHET CH_ET_BC_CDK_2017.HashValue
-	Ct_ABE FAME.CipherText
-	Ct_SE  SE.CipherText
+	H_CHET *CH_ET_BC_CDK_2017.HashValue
+	Ct_ABE *FAME.CipherText
+	Ct_SE  *SE.CipherText
 }
 
 type Randomness struct {
-	R_CHET CH_ET_BC_CDK_2017.Randomness
+	R_CHET *CH_ET_BC_CDK_2017.Randomness
 }
 
 func SetUp(curveName curve.Curve, swap_G1G2 bool, lamuda int64) (*PublicParam, *MasterPublicKey, *MasterSecretKey) {
@@ -51,15 +51,16 @@ func SetUp(curveName curve.Curve, swap_G1G2 bool, lamuda int64) (*PublicParam, *
 
 	ppPCH.lamuda = lamuda
 
-	ppPCH.GP.NewAsymmetry(curveName, swap_G1G2)
-	pp_ABE, mpk_ABE, msk_ABE := FAME.SetUpWithGP(&ppPCH.GP)
+	ppPCH.GP = GroupParam.NewAsymmetry(curveName, swap_G1G2)
+	pp_ABE, mpk_ABE, msk_ABE := FAME.SetUpWithGP(ppPCH.GP)
+	ppPCH.Pp_ABE = new(FAME.PublicParam)
 	ppPCH.Pp_ABE.GP = pp_ABE.GP
-	pkPCH.Mpk_ABE = *mpk_ABE
-	skPCH.Msk_ABE = *msk_ABE
+	pkPCH.Mpk_ABE = mpk_ABE
+	skPCH.Msk_ABE = msk_ABE
 	
 	pk_CHET, sk_CHET := CH_ET_BC_CDK_2017.KeyGen(lamuda)
-	pkPCH.Pk_CHET = *pk_CHET
-	skPCH.Sk_CHET = *sk_CHET
+	pkPCH.Pk_CHET = pk_CHET
+	skPCH.Sk_CHET = sk_CHET
 
 	return ppPCH, pkPCH, skPCH
 }
@@ -68,8 +69,8 @@ func KeyGen(ppPCH *PublicParam, pkPCH *MasterPublicKey, skPCH *MasterSecretKey, 
 	sk := new(SecretKey)
 
 	sk.Sk_CHET = skPCH.Sk_CHET
-	sk_ABE := FAME.KeyGen(&ppPCH.Pp_ABE, &pkPCH.Mpk_ABE, &skPCH.Msk_ABE, S)
-	sk.Sk_ABE = *sk_ABE
+	sk_ABE := FAME.KeyGen(ppPCH.Pp_ABE, pkPCH.Mpk_ABE, skPCH.Msk_ABE, S)
+	sk.Sk_ABE = sk_ABE
 
 	return sk
 }
@@ -78,9 +79,9 @@ func Hash(ppPCH *PublicParam, pkPCH *MasterPublicKey, MSP *utils.PBCMatrix, m *b
 	H := new(HashValue)
 	R := new(Randomness)
 
-	h_CHET, r_CHET, etd_CHET := CH_ET_BC_CDK_2017.Hash(&pkPCH.Pk_CHET, m, ppPCH.lamuda)
-	H.H_CHET = *h_CHET
-	R.R_CHET = *r_CHET
+	h_CHET, r_CHET, etd_CHET := CH_ET_BC_CDK_2017.Hash(pkPCH.Pk_CHET, m, ppPCH.lamuda)
+	H.H_CHET = h_CHET
+	R.R_CHET = r_CHET
 
 	r := make([]byte, 16)
 	k := make([]byte, 16)
@@ -92,48 +93,49 @@ func Hash(ppPCH *PublicParam, pkPCH *MasterPublicKey, MSP *utils.PBCMatrix, m *b
 	pla := utils.NewPlaText(k, r)
 	enc := utils.Encode(ppPCH.GP.Pairing, ppPCH.GP.GT, pla)
 
-	ct_ABE := FAME.EncryptWithElements(&ppPCH.Pp_ABE, &pkPCH.Mpk_ABE, MSP, FAME.NewPlainText(enc.K), &u.U_1, &u.U_2)
-	H.Ct_ABE = *ct_ABE
+	ct_ABE := FAME.EncryptWithElements(ppPCH.Pp_ABE, pkPCH.Mpk_ABE, MSP, FAME.NewPlainText(enc.K), u.U_1, u.U_2)
+	H.Ct_ABE = ct_ABE
 
 	ct_SE, err := SE.Encrypt(SE.NewPlainText(etd_CHET.Sk_ch_2.D.Bytes()), k)
 	if err != nil {
 		panic(err)
 	}
+	H.Ct_SE = new(SE.CipherText)
 	H.Ct_SE.CopyFrom(ct_SE)
 
 	return H, R
 }
 
 func Check(H *HashValue, R *Randomness, pkPCH *MasterPublicKey, m *big.Int) bool {
-	return CH_ET_BC_CDK_2017.Check(&H.H_CHET, &R.R_CHET, &pkPCH.Pk_CHET, m)
+	return CH_ET_BC_CDK_2017.Check(H.H_CHET, R.R_CHET, pkPCH.Pk_CHET, m)
 }
 
 func  Adapt(H *HashValue, R *Randomness, ppPCH *PublicParam, pkPCH *MasterPublicKey, MSP *utils.PBCMatrix, sk *SecretKey, m, mp *big.Int) *Randomness {
 	Rp := new(Randomness)
 
-	ptABE := FAME.Decrypt(&ppPCH.Pp_ABE, MSP, &H.Ct_ABE, &sk.Sk_ABE)
+	ptABE := FAME.Decrypt(ppPCH.Pp_ABE, MSP, H.Ct_ABE, sk.Sk_ABE)
 
 	pla := utils.Decode(utils.NewEncText(ptABE.M))
 
 	u := utils.H_2_element_String_2(ppPCH.GP.Pairing, ppPCH.GP.Zr, string(pla.R), MSP.Formula)
 
-	ctP := FAME.EncryptWithElements(&ppPCH.Pp_ABE, &pkPCH.Mpk_ABE, MSP, ptABE, &u.U_1, &u.U_2)
+	ctP := FAME.EncryptWithElements(ppPCH.Pp_ABE, pkPCH.Mpk_ABE, MSP, ptABE, u.U_1, u.U_2)
 
-	if !ctP.Equals(&H.Ct_ABE) {
+	if !ctP.Equals(H.Ct_ABE) {
 		panic("wrong abe ciphertext")
 	}
 
 	// etd := CH_ET_BC_CDK_2017.NewETrapdoor()
 	// sePT := se.NewAESPlainText()
-	sePT, err := SE.Decrypt(&H.Ct_SE, pla.K)
+	sePT, err := SE.Decrypt(H.Ct_SE, pla.K)
 	if err != nil {
 		panic(err)
 	}
 	etd := new(CH_ET_BC_CDK_2017.ETrapdoor)
 	etd.Sk_ch_2.D = new(big.Int).SetBytes(sePT.Pt)
 
-	r_CHET := CH_ET_BC_CDK_2017.Adapt(&H.H_CHET, &R.R_CHET, etd, &pkPCH.Pk_CHET, &sk.Sk_CHET, m, mp)
-	Rp.R_CHET = *r_CHET
+	r_CHET := CH_ET_BC_CDK_2017.Adapt(H.H_CHET, R.R_CHET, etd, pkPCH.Pk_CHET, sk.Sk_CHET, m, mp)
+	Rp.R_CHET = r_CHET
 
 	return Rp
 }

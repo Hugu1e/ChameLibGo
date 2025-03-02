@@ -133,13 +133,13 @@ func KeyGen(st *BinaryTree.BinaryTree, SP *PublicParam, mpk *MasterPublicKey, ms
         st.Setg(theta, SP.GP.GetG1Element())
     }
     sk.Sk_theta = make(map[int]*pbc.Element)
-    sk.Sk_theta[theta] = utils.DIV(sk.Sk_FAME.Sk_p[2], &st.GTheta[theta])
+    sk.Sk_theta[theta] = utils.DIV(sk.Sk_FAME.Sk_p[2], st.GTheta[theta])
     for theta != 0 {
         theta = st.GetFNodeId(theta)
         if !st.TagG[theta] {
             st.Setg(theta, SP.GP.GetG1Element())
         }
-        sk.Sk_theta[theta] = utils.DIV(sk.Sk_FAME.Sk_p[2], &st.GTheta[theta])
+        sk.Sk_theta[theta] = utils.DIV(sk.Sk_FAME.Sk_p[2], st.GTheta[theta])
     }
     sk.Sk_FAME.Sk_p[2] = SP.GP.GetG1Element()
 
@@ -155,7 +155,7 @@ func UpdateKeyGen(SP *PublicParam, mpk *MasterPublicKey, st *BinaryTree.BinaryTr
         if st.Tag[theta] && st.TagG[theta] {
             r_theta := SP.GP.GetZrElement()
             ku.AddKey(theta,
-                utils.MUL(&st.GTheta[theta], SP.H(fmt.Sprintf("%d", t)).ThenPowZn(r_theta)),
+                utils.MUL(st.GTheta[theta], SP.H(fmt.Sprintf("%d", t)).ThenPowZn(r_theta)),
                 utils.POWZN(mpk.Mpk_FAME.H, r_theta),
             )
         }

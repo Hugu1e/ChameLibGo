@@ -14,9 +14,7 @@ type CipherText struct {
 	Ct []byte
 }
 func (ct *CipherText) CopyFrom(other *CipherText) *CipherText {
-    if len(ct.Ct) < len(other.Ct) {
-        ct.Ct = make([]byte, len(other.Ct))
-    }
+    ct.Ct = make([]byte, len(other.Ct))
     copy(ct.Ct, other.Ct)
     return ct
 }

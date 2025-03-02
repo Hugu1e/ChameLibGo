@@ -12,8 +12,8 @@ import (
 )
 
 type PublicParam struct {
-	GP      GroupParam.Asymmetry
-	PpFAME  FAME.PublicParam
+	GP      *GroupParam.Asymmetry
+	PpFAME  *FAME.PublicParam
 }
 
 func (pp *PublicParam) H2(m string) *pbc.Element {
@@ -21,7 +21,7 @@ func (pp *PublicParam) H2(m string) *pbc.Element {
 }
 
 type MasterPublicKey struct {
-	MpkFAME			FAME.MasterPublicKey
+	MpkFAME			*FAME.MasterPublicKey
 	G_alpha			*pbc.Element
 	H_d_alpha		*pbc.Element
 	H_1_alpha		*pbc.Element
@@ -33,15 +33,15 @@ type MasterPublicKey struct {
 }
 
 type MasterSecretKey struct {
-	MskFAME	FAME.MasterSecretKey
+	MskFAME	*FAME.MasterSecretKey
 	Alpha   *pbc.Element
 	Beta    *pbc.Element
 	Sk_ch   *pbc.Element
-	Z_i      []*pbc.Element
+	Z_i		[]*pbc.Element
 }
 
 type SecretKey struct {
-	SkFAME	FAME.SecretKey
+	SkFAME	*FAME.SecretKey
 	Sk_0_g	[3]*pbc.Element
 	Sk_1    *pbc.Element
 	Sk_ch   *pbc.Element
@@ -98,7 +98,7 @@ type HashValue struct {
 }
 
 type Randomness struct {
-	CtFAME	FAME.CipherText
+	CtFAME	*FAME.CipherText
 	Epk		*pbc.Element
 	P       *pbc.Element
 	Sigma   *pbc.Element
@@ -112,7 +112,7 @@ type Randomness struct {
 }
 
 type User struct {
-	Ssk				SecretKey
+	Ssk				*SecretKey
 	ID_hat_alpha	*pbc.Element
 	ID_hat			*pbc.Element
 	ID_hat_h		*pbc.Element
@@ -165,7 +165,8 @@ func SetUp(curveName curve.Curve, swap_G1G2 bool, k int) (*MasterPublicKey, *Mas
 	msk := new(MasterSecretKey)
 	SP := new(PublicParam)
 
-	SP.GP.NewAsymmetry(curveName, swap_G1G2)
+	SP.GP = GroupParam.NewAsymmetry(curveName, swap_G1G2)
+	SP.PpFAME = new(FAME.PublicParam)
 	SP.PpFAME.GP = SP.GP
 
 	d1 := SP.GP.GetZrElement()
@@ -179,9 +180,9 @@ func SetUp(curveName curve.Curve, swap_G1G2 bool, k int) (*MasterPublicKey, *Mas
 	for i := 0; i < k; i++ {
 		msk.Z_i[i] = SP.GP.GetZrElement()
 	}
-	mpkFAME, mskFAME := FAME.SetUp_d(&SP.PpFAME, d1, d2, d3, msk.Alpha)
-	mpk.MpkFAME = *mpkFAME
-	msk.MskFAME = *mskFAME
+	mpkFAME, mskFAME := FAME.SetUp_d(SP.PpFAME, d1, d2, d3, msk.Alpha)
+	mpk.MpkFAME = mpkFAME
+	msk.MskFAME = mskFAME
 
 	mpk.G_i = make([]*pbc.Element, k)
 	for i := 0; i < k; i++ {
@@ -222,8 +223,9 @@ func KeyGen(mod *User, SP *PublicParam, mpk *MasterPublicKey, msk *MasterSecretK
 	r2 := SP.GP.GetZrElement()
 	r := utils.ADD(r1, r2)
 	R := SP.GP.GetZrElement()
-	skFAME := FAME.KeyGenWithElements(&SP.PpFAME, &mpk.MpkFAME, &msk.MskFAME, S, r1, r2, msk.Alpha)
-	mod.Ssk.SkFAME = *skFAME
+	skFAME := FAME.KeyGenWithElements(SP.PpFAME, mpk.MpkFAME, msk.MskFAME, S, r1, r2, msk.Alpha)
+	mod.Ssk = new(SecretKey)
+	mod.Ssk.SkFAME = skFAME
 
 	mod.Ssk.SkFAME.Sk_0[2] = utils.POWZN(mpk.MpkFAME.H, utils.DIV(r, msk.Alpha))
 	mod.Ssk.Sk_0_g[0] = utils.POWZN(mpk.MpkFAME.G, utils.INVERT(msk.Alpha))
@@ -248,8 +250,8 @@ func GenCipher(R *Randomness, SP *PublicParam, mpk *MasterPublicKey, owner *User
 	s := utils.ADD(s1, s2)
 	R.P = utils.POWZN(mpk.Pk_Ch, r)
 
-	ctFAME := FAME.EncryptWithElements(&SP.PpFAME, &mpk.MpkFAME, MSP, &FAME.PlainText{M : SP.GP.GetGTElement().Set1()}, s1, s2)
-	R.CtFAME = *ctFAME
+	ctFAME := FAME.EncryptWithElements(SP.PpFAME, mpk.MpkFAME, MSP, &FAME.PlainText{M : SP.GP.GetGTElement().Set1()}, s1, s2)
+	R.CtFAME = ctFAME
 
 	R.CtFAME.Ct_0[2] = utils.POWZN(mpk.H_1_alpha, s)
 	R.Ct_0_4 = utils.POWZN(mpk.H_beta_alpha, s)
@@ -338,7 +340,7 @@ func Adapt(H *HashValue, R *Randomness, SP *PublicParam, mpk *MasterPublicKey, m
 
 	R_ = R_[:len(R_)/2]
 
-	pt_RABE := FAME.Decrypt(&SP.PpFAME, MSP, &R.CtFAME, &moder_p.Ssk.SkFAME)
+	pt_RABE := FAME.Decrypt(SP.PpFAME, MSP, R.CtFAME, moder_p.Ssk.SkFAME)
 
 	r_ := utils.INVERT(pt_RABE.M).Bytes()
 	for i := 0; i < len(r_); i++ {
