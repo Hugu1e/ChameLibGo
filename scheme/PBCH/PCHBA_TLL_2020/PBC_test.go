@@ -28,7 +28,7 @@ func run_scheme(t *testing.T, cur curve.Curve, swap bool, k int) {
 	AssignUser(u1, mpk, msk)
 	KeyGen(u1, SP, mpk, msk, S1)
 
-	u2 := NewUserWithLen(SP, k/2)
+	u2 := NewUserFromUser(u1, SP, k/2)
 	AssignUser(u2, mpk, msk)
 	KeyGen(u2, SP, mpk, msk, S2)
 
@@ -59,13 +59,13 @@ func run_scheme(t *testing.T, cur curve.Curve, swap bool, k int) {
 		t.Error()
 	}
 	
-	// r1_p = Adapt(h2, r2, SP, mpk, msk, u1, MSP, m2, m1)
-	// if !Check(h2, r1_p, SP, mpk, m1) {
-	// 	t.Errorf("Adapt(m1) invalid")
-	// }
-	// if Check(h2, r1_p, SP, mpk, m2) {
-	// 	t.Error()
-	// }
+	r1_p = Adapt(h2, r2, SP, mpk, msk, u1, MSP, m2, m1)
+	if !Check(h2, r1_p, SP, mpk, m1) {
+		t.Errorf("Adapt(m1) invalid")
+	}
+	if Check(h2, r1_p, SP, mpk, m2) {
+		t.Error()
+	}
 
 	r1_p = Adapt(h2, r2, SP, mpk, msk, u2, MSP, m2, m1)
 	if Check(h2, r1_p, SP, mpk, m1) {

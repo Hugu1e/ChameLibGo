@@ -119,28 +119,28 @@ type User struct {
 	ID				[]*pbc.Element
 }
 
-func NewUserWithLen(SP *PublicParam, len int) *User {
+func NewUserWithLen(SP *PublicParam, length int) *User {
 	usr := new(User)
 
-	usr.ID = make([]*pbc.Element, len)
-	for i := 0; i < len; i++ {
+	usr.ID = make([]*pbc.Element, length)
+	for i := 0; i < length; i++ {
 		usr.ID[i] = SP.GP.GetZrElement()
 	}
 
 	return usr
 }
 
-// func NewUserFromUser(f *User, SP *PublicParam, len int) *User {
-// 	ID := make([]*pbc.Element, len)
-// 	copy(ID, f.ID)
-// 	for i := len(f.ID); i < len; i++ {
-// 		ID[i] = SP.GP.GetZrElement()
-// 	}
-// 	return &User{
-// 		Ssk: f.Ssk,
-// 		ID:  ID,
-// 	}
-// }
+func NewUserFromUser(f *User, SP *PublicParam, length int) *User {
+	ID := make([]*pbc.Element, length)
+	copy(ID, f.ID)
+	for i := len(f.ID); i < length; i++ {
+		ID[i] = SP.GP.GetZrElement()
+	}
+	return &User{
+		Ssk: f.Ssk,
+		ID:  ID,
+	}
+}
 
 func NewUser(u *User) *User {
 	return &User{
