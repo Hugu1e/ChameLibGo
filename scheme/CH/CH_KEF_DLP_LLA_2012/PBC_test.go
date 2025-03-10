@@ -9,13 +9,6 @@ import (
 )
 
 func run_scheme(t *testing.T, cur curve.Curve, group pbc.Field){
-	if(group == pbc.GT && (cur == curve.SM_9 || cur == curve.G_149)){
-		return
-	}
-	if(group == pbc.G2 && (cur == curve.G_149)){
-		return
-	}
-
 	pp, lm := SetUp(cur, group)
 
 	pk, sk := KeyGen(lm, pp)

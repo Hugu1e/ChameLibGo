@@ -8,11 +8,11 @@ import (
 )
 
 type Label struct {
-	L, R pbc.Element
+	L, R *pbc.Element
 }
 
 type LabelGen struct {
-	Y_1, Omega_1 pbc.Element
+	Y_1, Omega_1 *pbc.Element
 }
 
 type LabelManager struct {
@@ -41,8 +41,8 @@ func (lm *LabelManager) get(pk *PublicKey) *Label {
 	t := lm.GetGroupElement()
 	H2_t := H2(lm.Pairing, pbc.Zr, t)
 	lg := lm.Dict[*pk]
-	L.L = *utils.POWZN(&lg.Y_1, H2_t)
-	L.R = *utils.POWZN(&lg.Omega_1, H2_t).ThenMul(t)
+	L.L = utils.POWZN(lg.Y_1, H2_t)
+	L.R = utils.POWZN(lg.Omega_1, H2_t).ThenMul(t)
 
 	return L
 }
@@ -68,19 +68,19 @@ func (pp *PublicParam) GetZrElement() *pbc.Element {
 }
 
 type PublicKey struct {
-	G, Y_2 pbc.Element
+	G, Y_2 *pbc.Element
 }
 
 type SecretKey struct {
-	Alpha, X_1, X_2 pbc.Element
+	Alpha, X_1, X_2 *pbc.Element
 }
 
 type HashValue struct {
-	S pbc.Element
+	S *pbc.Element
 }
 
 type Randomness struct {
-	R pbc.Element
+	R *pbc.Element
 }
 
 func H1(pairing *pbc.Pairing, group pbc.Field, m1, m2, m3 *pbc.Element) *pbc.Element {
@@ -92,7 +92,7 @@ func H2(pairing *pbc.Pairing, group pbc.Field, m1 *pbc.Element) *pbc.Element {
 }
 
 func getHashValue(r *Randomness, L *Label, pk *PublicKey, m *pbc.Element, pp *PublicParam) *pbc.Element {
-	return utils.POWZN(&pk.G, m).ThenMul(utils.POWZN(&pk.Y_2, H1(pp.Pairing, pbc.Zr, &L.L, &L.R, &L.L)).ThenMul(&L.L).ThenPowZn(&r.R))
+	return utils.POWZN(pk.G, m).ThenMul(utils.POWZN(pk.Y_2, H1(pp.Pairing, pbc.Zr, L.L, L.R, L.L)).ThenMul(L.L).ThenPowZn(r.R))
 }
 
 func SetUp(curveName curve.Curve, group pbc.Field) (*PublicParam, *LabelManager) {
@@ -113,16 +113,16 @@ func KeyGen(lm *LabelManager, pp *PublicParam) (*PublicKey, *SecretKey) {
 	pk := new(PublicKey)
 	sk := new(SecretKey)
 
-	pk.G = *pp.GetGroupElement()
-	sk.Alpha = *pp.GetZrElement()
-	sk.X_1 = *pp.GetZrElement()
-	sk.X_2 = *pp.GetZrElement()
+	pk.G = pp.GetGroupElement()
+	sk.Alpha = pp.GetZrElement()
+	sk.X_1 = pp.GetZrElement()
+	sk.X_2 = pp.GetZrElement()
 
 	lg := new(LabelGen)
-	lg.Y_1 = *utils.POWZN(&pk.G, &sk.X_1)
-	lg.Omega_1 = *utils.POWZN(&lg.Y_1, &sk.Alpha)
+	lg.Y_1 = utils.POWZN(pk.G, sk.X_1)
+	lg.Omega_1 = utils.POWZN(lg.Y_1, sk.Alpha)
 	
-	pk.Y_2 = *utils.POWZN(&pk.G, &sk.X_2)
+	pk.Y_2 = utils.POWZN(pk.G, sk.X_2)
 	lm.add(pk, lg)
 
 	return pk, sk
@@ -133,8 +133,8 @@ func Hash(lm *LabelManager, pk *PublicKey, m *pbc.Element, pp *PublicParam) (*Ha
 	r := new(Randomness)
 	L := lm.get(pk)
 
-	r.R = *pp.GetZrElement()
-	h.S = *getHashValue(r, L, pk, m, pp)
+	r.R = pp.GetZrElement()
+	h.S = getHashValue(r, L, pk, m, pp)
 
 	return h, r, L
 }
@@ -149,13 +149,13 @@ func UForge(h *HashValue, r *Randomness, L *Label, pk *PublicKey, sk *SecretKey,
 	}
 	r_p := new(Randomness)
 
-	t := utils.DIV(&L.R, utils.POWZN(&L.L, &sk.Alpha))
+	t := utils.DIV(L.R, utils.POWZN(L.L, sk.Alpha))
 	H2_t := H2(pp.Pairing, pbc.Zr, t)
-	c := H1(pp.Pairing, pbc.Zr, &L.L, &L.R, &L.L)
-	if !utils.POWZN(&pk.G, utils.MUL(H2_t, &sk.X_1)).Equals(&L.L) {
+	c := H1(pp.Pairing, pbc.Zr, L.L, L.R, L.L)
+	if !utils.POWZN(pk.G, utils.MUL(H2_t, sk.X_1)).Equals(L.L) {
 		panic("illegal label")
 	}
-	r_p.R = *utils.SUB(m, m_p).ThenDiv(utils.MUL(&sk.X_1, H2_t).ThenAdd(utils.MUL(&sk.X_2, c))).ThenAdd(&r.R)
+	r_p.R = utils.SUB(m, m_p).ThenDiv(utils.MUL(sk.X_1, H2_t).ThenAdd(utils.MUL(sk.X_2, c))).ThenAdd(r.R)
 
 	return r_p
 }
@@ -163,7 +163,7 @@ func UForge(h *HashValue, r *Randomness, L *Label, pk *PublicKey, sk *SecretKey,
 func IForge(r, r_p *Randomness, m, m_p, m_pp *pbc.Element) *Randomness {
 	r_pp := new(Randomness)
 
-	r_pp.R = *utils.SUB(&r_p.R, &r.R).ThenMul(utils.SUB(m_p, m_pp)).ThenDiv(utils.SUB(m, m_p)).ThenAdd(&r_p.R) 
+	r_pp.R = utils.SUB(r_p.R, r.R).ThenMul(utils.SUB(m_p, m_pp)).ThenDiv(utils.SUB(m, m_p)).ThenAdd(r_p.R) 
 
 	return r_pp
 }

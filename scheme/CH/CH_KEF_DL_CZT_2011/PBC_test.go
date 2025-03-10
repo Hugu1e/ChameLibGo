@@ -9,11 +9,6 @@ import (
 )
 
 func run_scheme(t *testing.T, cur curve.Curve, group pbc.Field){
-	// these group has wrong behave in fromhash
-	if group == pbc.GT && (cur == curve.D_159 || cur == curve.D_201 || cur == curve.D_224 || cur == curve.D_105171_196_185 || cur == curve.D_277699_175_167 || cur == curve.D_278027_190_181 || cur == curve.F || cur == curve.SM_9 || cur == curve.G_149) {
-		return
-	}
-
 	pp := SetUp(cur, group)
 	
 	pk, sk := KeyGen(pp)

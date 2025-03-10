@@ -24,11 +24,6 @@ func run_scheme(t *testing.T, cur curve.Curve, group pbc.Field) {
 		}
 	}
 
-	if(group == pbc.GT && (cur == curve.G_149 || cur == curve.SM_9)) {
-		// type G's GT has wrong behave in GT hash to GT
-		return
-	}
-
 	pp := SetUp(cur, group)
 
 	pk, sk := KeyGen(pp)

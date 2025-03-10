@@ -23,9 +23,6 @@ func run_scheme(t *testing.T, cur curve.Curve, group pbc.Field) {
 				return
 		}
 	}
-	if (group == pbc.GT || group == pbc.G2) && cur == curve.G_149 {
-		return
-	}
 
 	pp := SetUp(cur, group)
 
