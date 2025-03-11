@@ -11,8 +11,9 @@ import (
 type PublicParam struct {
 	Pairing *pbc.Pairing
 	Group pbc.Field
+	curveName curve.Curve
 
-	G_1, G_2 pbc.Element
+	G_1, G_2 *pbc.Element
 }
 
 func (pp *PublicParam) H(m string) *pbc.Element {
@@ -20,7 +21,8 @@ func (pp *PublicParam) H(m string) *pbc.Element {
 }
 
 func (pp *PublicParam) H2(m1, m2, m3, m4, m5 *pbc.Element) *pbc.Element {
-	return pp.H(fmt.Sprintf("(%s|%s|%s)(%s|%s)", m1.String(), m2.String(), m3.String(), m4.String(), m5.String()))
+	ndonr := utils.GetNdonr(pp.Group, pp.curveName)
+	return pp.H(fmt.Sprintf("(%s|%s|%s)(%s|%s)", m1.String(), m2.String(), m3.String(), utils.POWBIG(m4, ndonr).String(), utils.POWBIG(m5, ndonr).String()))
 }
 
 func (pp *PublicParam) Hp(m *pbc.Element) *pbc.Element {
@@ -44,19 +46,19 @@ func (pp *PublicParam) GetZrElement() *pbc.Element {
 }
 
 type PublicKey struct {
-	Y pbc.Element
+	Y *pbc.Element
 }
 
 type SecretKey struct {
-	X pbc.Element
+	X *pbc.Element
 }
 
 type HashValue struct {
-	O pbc.Element
+	O *pbc.Element
 }
 
 type Randomness struct {
-	E_1, E_2, S_1_1, S_1_2, S_2 pbc.Element
+	E_1, E_2, S_1_1, S_1_2, S_2 *pbc.Element
 }
 
 func SetUp(curveName curve.Curve, group pbc.Field) (*PublicParam) {
@@ -64,9 +66,10 @@ func SetUp(curveName curve.Curve, group pbc.Field) (*PublicParam) {
 
 	pp.Group = group
 	pp.Pairing = curve.PairingGen(curveName)
+	pp.curveName = curveName
 
-	pp.G_1 = *pp.GetGroupElement()
-	pp.G_2 = *pp.Hp(&pp.G_1)
+	pp.G_1 = pp.GetGroupElement()
+	pp.G_2 = pp.Hp(pp.G_1)
 
 	return pp
 }
@@ -75,8 +78,8 @@ func KeyGen(pp *PublicParam) (*PublicKey, *SecretKey) {
 	pk := new(PublicKey)
 	sk := new(SecretKey)
 
-	sk.X = *pp.GetZrElement()
-	pk.Y = *utils.POWZN(&pp.G_1, &sk.X)
+	sk.X = pp.GetZrElement()
+	pk.Y = utils.POWZN(pp.G_1, sk.X)
 
 	return pk, sk
 }
@@ -88,27 +91,27 @@ func Hash(pp *PublicParam, pk *PublicKey, m *pbc.Element) (*HashValue, *Randomne
 	xi := pp.GetZrElement()
 	k11 := pp.GetZrElement()
 	k12 := pp.GetZrElement()
-	R.E_2 = *pp.GetZrElement()
-	R.S_2 = *pp.GetZrElement()
+	R.E_2 = pp.GetZrElement()
+	R.S_2 = pp.GetZrElement()
 
-	H.O = *utils.POWZN(&pp.G_1, m).ThenMul(utils.POWZN(&pp.G_2, xi))
+	H.O = utils.POWZN(pp.G_1, m).ThenMul(utils.POWZN(pp.G_2, xi))
 
-	R.E_1 = *utils.SUB(pp.H2(
-		&pk.Y, &H.O, m,
-		utils.MUL(utils.POWZN(&pp.G_1, k11), utils.POWZN(&pp.G_2, k12)),
-		utils.MUL(utils.POWZN(&pp.G_1, &R.S_2), utils.POWZN(&pk.Y, utils.NEG(&R.E_2))),
-	) , &R.E_2)
-	R.S_1_1 = *utils.ADD(k11, utils.MUL(&R.E_1, m))
-	R.S_1_2 = *utils.ADD(k12, utils.MUL(&R.E_1, xi))
+	R.E_1 = utils.SUB(pp.H2(
+		pk.Y, H.O, m,
+		utils.MUL(utils.POWZN(pp.G_1, k11), utils.POWZN(pp.G_2, k12)),
+		utils.MUL(utils.POWZN(pp.G_1, R.S_2), utils.POWZN(pk.Y, utils.NEG(R.E_2))),
+	) , R.E_2)
+	R.S_1_1 = utils.ADD(k11, utils.MUL(R.E_1, m))
+	R.S_1_2 = utils.ADD(k12, utils.MUL(R.E_1, xi))
 
 	return H, R
 }
 
 func Check(H *HashValue, R *Randomness, pp *PublicParam, pk *PublicKey, m *pbc.Element) bool {
-	return utils.ADD(&R.E_1, &R.E_2).Equals(pp.H2(
-		&pk.Y, &H.O, m,
-		utils.POWZN(&pp.G_1, &R.S_1_1).ThenMul(utils.POWZN(&pp.G_2, &R.S_1_2)).ThenMul(utils.POWZN(&H.O, utils.NEG(&R.E_1))),
-		utils.POWZN(&pp.G_1, &R.S_2).ThenMul(utils.POWZN(&pk.Y, utils.NEG(&R.E_2))),
+	return utils.ADD(R.E_1, R.E_2).Equals(pp.H2(
+		pk.Y, H.O, m,
+		utils.POWZN(pp.G_1, R.S_1_1).ThenMul(utils.POWZN(pp.G_2, R.S_1_2)).ThenMul(utils.POWZN(H.O, utils.NEG(R.E_1))),
+		utils.POWZN(pp.G_1, R.S_2).ThenMul(utils.POWZN(pk.Y, utils.NEG(R.E_2))),
 	))
 }
 
@@ -119,17 +122,17 @@ func Adapt(H *HashValue, R *Randomness, pp *PublicParam, pk *PublicKey, sk *Secr
 	Rp := new(Randomness)
 
 	k2 := pp.GetZrElement()
-	Rp.E_1 = *pp.GetZrElement()
-	Rp.S_1_1 = *pp.GetZrElement()
-	Rp.S_1_2 = *pp.GetZrElement()
+	Rp.E_1 = pp.GetZrElement()
+	Rp.S_1_1 = pp.GetZrElement()
+	Rp.S_1_2 = pp.GetZrElement()
 
-	Rp.E_2 = *utils.SUB(pp.H2(
-		&pk.Y, &H.O, mp,
-		utils.POWZN(&pp.G_1, &Rp.S_1_1).ThenMul(utils.POWZN(&pp.G_2, &Rp.S_1_2)).ThenMul(utils.POWZN(&H.O, utils.NEG(&Rp.E_1))),
-		utils.POWZN(&pp.G_1, k2),
-	), &Rp.E_1)
+	Rp.E_2 = utils.SUB(pp.H2(
+		pk.Y, H.O, mp,
+		utils.POWZN(pp.G_1, Rp.S_1_1).ThenMul(utils.POWZN(pp.G_2, Rp.S_1_2)).ThenMul(utils.POWZN(H.O, utils.NEG(Rp.E_1))),
+		utils.POWZN(pp.G_1, k2),
+	), Rp.E_1)
 
-	Rp.S_2 = *utils.ADD(k2, utils.MUL(&Rp.E_2, &sk.X))
+	Rp.S_2 = utils.ADD(k2, utils.MUL(Rp.E_2, sk.X))
 
 	return Rp
 }

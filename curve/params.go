@@ -1,6 +1,9 @@
 package curve
 
-import(
+import (
+	"math/big"
+	"strings"
+
 	"github.com/Nik-U/pbc"
 )
 
@@ -41,6 +44,55 @@ const(
 	
 	i_param = "type i\nm 97\nt 12\nn 2726865189058261010774960798134976187171462721\nn2 7"
 )
+
+func (c Curve) GetBigInt(s string) *big.Int{
+	var str string
+	switch c {
+	// case A_80:
+	// 	str = a_param_80
+	// case A_112:
+	// 	str = a_param_112
+	// case A_128:
+	// 	str = a_param_128
+	// case a_param_160:
+	// 	str = a_param_160
+	case A:
+		str = a_param
+	case A1:
+		str = a1_param
+	case D_159:
+		str = d159_param
+	case D_201:
+		str = d201_param
+	case D_224:
+		str = d224_param
+	case D_105171_196_185:
+		str = d105171_196_185_param
+	case D_277699_175_167:
+		str = d277699_175_167_param
+	case D_278027_190_181:
+		str = d278027_190_181_param
+	case E:
+		str = e_param
+	case F:
+		str = f_param
+	case SM_9:
+		str = sm9_param
+	case G_149:
+		str = g149_param
+	default:
+	}
+
+	lines := strings.Split(str, "\n")
+	for _, line := range lines {
+		parts := strings.SplitN(line, " ", 2)
+		if len(parts) == 2 && parts[0] == s {
+			par, _ := new(big.Int).SetString(parts[1], 10)
+			return par
+		}
+	}
+	panic("Unknown parameter")
+}
 
 var CurveName = map[Curve]string{
     A:            "A",

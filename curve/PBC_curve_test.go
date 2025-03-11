@@ -92,3 +92,9 @@ func TestTypeSM_9Curve(t *testing.T) {
 func TestTypeG_149Curve(t *testing.T) {
 	baseRun(t, PairingGen(G_149))
 }
+
+func TestGetParam(t *testing.T){
+	var curveName Curve
+	curveName = D_159
+	t.Log(curveName.GetBigInt("k"))
+}

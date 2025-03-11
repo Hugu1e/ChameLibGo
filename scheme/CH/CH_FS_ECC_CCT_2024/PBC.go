@@ -11,6 +11,7 @@ import (
 type PublicParam struct {
 	Group pbc.Field
 	Pairing *pbc.Pairing
+	curveName curve.Curve
 
 	G     *pbc.Element
 }
@@ -24,7 +25,8 @@ func (pp *PublicParam) H_p(m string) *pbc.Element {
 }
 
 func (pp *PublicParam) H_p_2(m1, m2, m3, m4 *pbc.Element) *pbc.Element {
-	return pp.H_p(fmt.Sprintf("%s|%s|%s|%s", m1, m2, m3, m4))
+	ndonr := utils.GetNdonr(pp.Group, pp.curveName)
+	return pp.H_p(fmt.Sprintf("%s|%s|%s|%s", utils.POWBIG(m1, ndonr), m2, m3, m4))
 }
 
 func (pp *PublicParam) GetGroupElement() *pbc.Element {
@@ -64,6 +66,7 @@ func SetUp(curveName curve.Curve, group pbc.Field) *PublicParam {
 
 	pp.Pairing = curve.PairingGen(curveName)
 	pp.Group = group
+	pp.curveName = curveName
 	
 
 	pp.G = pp.GetGroupElement()

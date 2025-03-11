@@ -9,21 +9,6 @@ import (
 )
 
 func run_scheme(t *testing.T, cur curve.Curve, group pbc.Field) {
-	if(group == pbc.G2) {
-		switch (cur) {
-			case curve.A:
-				break
-			case curve.A1:
-				break
-			case curve.E:
-				break
-
-			default:
-				// non-symmetric group there may be different element in string that isEqual returns true.
-				return
-		}
-	}
-
 	pp := SetUp(cur, group)
 
 	pk, sk := KeyGen(pp)
