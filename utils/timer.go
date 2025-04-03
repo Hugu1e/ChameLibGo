@@ -74,3 +74,10 @@ func (t *timer) AverageAndEnd() {
 
 	t.file.Close()
 }
+
+func (t *timer) AverageN(name string, N int){
+	if _, exist := t.averageTime[name]; !exist {
+		panic(name + "no exist")
+	}
+	t.averageTime[name] = t.averageTime[name] / time.Duration(N)
+}

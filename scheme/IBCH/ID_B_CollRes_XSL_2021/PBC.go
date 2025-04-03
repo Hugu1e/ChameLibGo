@@ -14,8 +14,8 @@ type PublicParam struct {
 	Zr, G1, G2, GT pbc.Field
 	SwapG1G2   bool
 
-	G, G_1, G_2 pbc.Element
-	U          []pbc.Element
+	G, G_1, G_2 *pbc.Element
+	U          []*pbc.Element
 	N          int
 }
 
@@ -65,11 +65,11 @@ func (pp *PublicParam) GenIdentity() *Identity {
 }
 
 type MasterSecretKey struct {
-	G_2_alpha pbc.Element
+	G_2_alpha *pbc.Element
 }
 
 type SecretKey struct {
-	Tk_1, Tk_2 pbc.Element
+	Tk_1, Tk_2 *pbc.Element
 }
 
 type Identity struct {
@@ -84,23 +84,23 @@ func (I *Identity) set(i int, x bool){
 }
 
 type HashValue struct {
-	H pbc.Element
+	H *pbc.Element
 }
 
 type Randomness struct {
-	R_1, R_2 pbc.Element
+	R_1, R_2 *pbc.Element
 }
 
 
 func getHashValue(R *Randomness, SP *PublicParam, ID *Identity, m *pbc.Element) *pbc.Element {
-	tmp := SP.U[0].NewFieldElement().Set(&SP.U[0])
+	tmp := SP.U[0].NewFieldElement().Set(SP.U[0])
 	for i := 1; i <= SP.N; i++ {
 		if ID.at(i) {
-			tmp.ThenMul(&SP.U[i])
+			tmp.ThenMul(SP.U[i])
 		}
 	}
-	tmp1 := SP.pairing(&SP.G_1, &SP.G_2).ThenPowZn(m)
-	tmp2 := SP.pairing(&SP.G, &R.R_1).ThenDiv(SP.pairing(&R.R_2, tmp))
+	tmp1 := SP.pairing(SP.G_1, SP.G_2).ThenPowZn(m)
+	tmp2 := SP.pairing(SP.G, R.R_1).ThenDiv(SP.pairing(R.R_2, tmp))
 	return tmp1.ThenMul(tmp2)
 }
 
@@ -119,17 +119,17 @@ func SetUp(curveName curve.Curve, n int, swapG1G2 bool) (*PublicParam, *MasterSe
 	}
 	SP.GT = pbc.GT
 	SP.Zr = pbc.Zr
-	SP.U = make([]pbc.Element, n+1)
+	SP.U = make([]*pbc.Element, n+1)
 	SP.N = n
 
 	alpha := SP.GetZrElement()
-	SP.G = *SP.GetG1Element()
-	SP.G_2 = *SP.GetG2Element()
-	SP.G_1 = *utils.POWZN(&SP.G, alpha)
+	SP.G = SP.GetG1Element()
+	SP.G_2 = SP.GetG2Element()
+	SP.G_1 = utils.POWZN(SP.G, alpha)
 	for i := 0; i <= n; i++ {
-		SP.U[i] = *SP.GetG2Element()
+		SP.U[i] = SP.GetG2Element()
 	}
-	msk.G_2_alpha = *utils.POWZN(&SP.G_2, alpha)
+	msk.G_2_alpha = utils.POWZN(SP.G_2, alpha)
 
 	return SP, msk
 }
@@ -138,14 +138,14 @@ func KeyGen(SP *PublicParam, msk *MasterSecretKey, ID *Identity) *SecretKey {
 	sk := new(SecretKey)
 
 	t := SP.GetZrElement()
-	tmp := SP.U[0].NewFieldElement().Set(&SP.U[0])
+	tmp := SP.U[0].NewFieldElement().Set(SP.U[0])
 	for i := 1; i <= SP.N; i++ {
 		if ID.at(i) {
-			tmp.ThenMul(&SP.U[i])
+			tmp.ThenMul(SP.U[i])
 		}
 	}
-	sk.Tk_1 = *utils.MUL(&msk.G_2_alpha, tmp.ThenPowZn(t))
-	sk.Tk_2 = *utils.POWZN(&SP.G, t)
+	sk.Tk_1 = utils.MUL(msk.G_2_alpha, tmp.ThenPowZn(t))
+	sk.Tk_2 = utils.POWZN(SP.G, t)
 
 	return sk
 }
@@ -154,9 +154,9 @@ func Hash(SP *PublicParam, ID *Identity, m *pbc.Element) (*HashValue, *Randomnes
 	H := new(HashValue)
 	R := new(Randomness)
 
-	R.R_1 = *SP.GetG2Element()
-	R.R_2 = *SP.GetG1Element()
-	H.H = *getHashValue(R, SP, ID, m)
+	R.R_1 = SP.GetG2Element()
+	R.R_2 = SP.GetG1Element()
+	H.H = getHashValue(R, SP, ID, m)
 
 	return H, R
 }
@@ -169,8 +169,8 @@ func Adapt(R *Randomness, sk *SecretKey, m, mp *pbc.Element) *Randomness {
 	Rp := new(Randomness)
 
 	deltaM := utils.SUB(m, mp)
-	Rp.R_1 = *utils.MUL(&R.R_1, utils.POWZN(&sk.Tk_1, deltaM))
-	Rp.R_2 = *utils.MUL(&R.R_2, utils.POWZN(&sk.Tk_2, deltaM))
+	Rp.R_1 = utils.MUL(R.R_1, utils.POWZN(sk.Tk_1, deltaM))
+	Rp.R_2 = utils.MUL(R.R_2, utils.POWZN(sk.Tk_2, deltaM))
 
 	return Rp
 }
