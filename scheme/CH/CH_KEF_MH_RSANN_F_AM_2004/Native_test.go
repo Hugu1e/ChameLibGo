@@ -1,20 +1,21 @@
 package CH_KEF_MH_RSANN_F_AM_2004
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Hugu1e/ChameLibGo/utils"
 )
 
-func run_scheme(t *testing.T){
-	pk, sk := KeyGen(512)
-	m1 := utils.GenerateBigNumber(256)
-	m2 := utils.GenerateBigNumber(256)
+func run_scheme(t *testing.T, bitLen int64){
+	pk, sk := KeyGen(bitLen)
+	m1 := utils.GenerateBigNumber(bitLen/2)
+	m2 := utils.GenerateBigNumber(bitLen/2)
 	if m1.Cmp(m2) == 0 {
 		t.Errorf("m1 == m2")
 	}
-	L1 := utils.GenerateBigNumber(512)
-	L2 := utils.GenerateBigNumber(512)
+	L1 := utils.GenerateBigNumber(bitLen)
+	L2 := utils.GenerateBigNumber(bitLen)
 	if L1.Cmp(L2) == 0 {
 		t.Errorf("L1 == L2")
 	}
@@ -54,7 +55,17 @@ func run_scheme(t *testing.T){
 }
 
 func Test_Native(t *testing.T) {
-	run_scheme(t)
+	cases := []struct {
+		bitLen int64
+	}{
+		{512},
+	}
+
+	for i, c := range cases {
+		t.Run(fmt.Sprintf("case %d bitLen %d", i+1, c.bitLen), func(t *testing.T) {
+			run_scheme(t, c.bitLen)
+		})
+	}
 }
 
 

@@ -11,7 +11,7 @@ type PublicParam struct {
 	Group pbc.Field
 	Pairing *pbc.Pairing
 
-	G pbc.Element
+	G *pbc.Element
 }
 func (pp *PublicParam) GetGroupElement() *pbc.Element {
 	switch pp.Group {
@@ -33,24 +33,24 @@ func (pp *PublicParam) H(m1, m2 *pbc.Element) *pbc.Element {
 }
 
 type PublicKey struct {
-	Y pbc.Element
+	Y *pbc.Element
 }
 
 type SecretKey struct {
-	X pbc.Element
+	X *pbc.Element
 }
 
 type HashValue struct {
-	H pbc.Element
+	H *pbc.Element
 }
 
 type Randomness struct {
-	G_a pbc.Element
-	Y_a pbc.Element
+	G_a *pbc.Element
+	Y_a *pbc.Element
 }
 
 func getHashValue(R *Randomness, SP *PublicParam, pk *PublicKey, I, m *pbc.Element) *pbc.Element {
-	return SP.H(&pk.Y, I).ThenPowZn(m).ThenMul(&R.G_a)
+	return SP.H(pk.Y, I).ThenPowZn(m).ThenMul(R.G_a)
 }
 
 func SetUp(curveName curve.Curve, group pbc.Field) (*PublicParam) {
@@ -59,7 +59,7 @@ func SetUp(curveName curve.Curve, group pbc.Field) (*PublicParam) {
 	SP.Pairing = curve.PairingGen(curveName)
 	SP.Group = group
 
-	SP.G = *SP.GetGroupElement()
+	SP.G = SP.GetGroupElement()
 
 	return SP
 }
@@ -68,8 +68,8 @@ func KeyGen(SP *PublicParam) (*PublicKey, *SecretKey) {
 	sk := new(SecretKey)
 	pk := new(PublicKey)
 
-	sk.X = *SP.GetZrElement()
-	pk.Y = *utils.POWZN(&SP.G, &sk.X)
+	sk.X = SP.GetZrElement()
+	pk.Y = utils.POWZN(SP.G, sk.X)
 
 	return pk, sk
 }
@@ -79,9 +79,9 @@ func Hash(SP *PublicParam, pk *PublicKey, I, m *pbc.Element) (*HashValue, *Rando
 	R := new(Randomness)
 	
 	a := SP.GetZrElement()
-	R.G_a = *utils.POWZN(&SP.G, a)
-	R.Y_a = *utils.POWZN(&pk.Y, a)
-	H.H = *getHashValue(R, SP, pk, I, m)
+	R.G_a = utils.POWZN(SP.G, a)
+	R.Y_a = utils.POWZN(pk.Y, a)
+	H.H = getHashValue(R, SP, pk, I, m)
 
 	return H, R
 }
@@ -93,10 +93,10 @@ func Check(H *HashValue, R *Randomness, SP *PublicParam, pk *PublicKey, I, m *pb
 func Adapt(R *Randomness, SP *PublicParam, pk *PublicKey, sk *SecretKey, I, m, m_p *pbc.Element) *Randomness {
 	R_p := new(Randomness)
 
-	h := SP.H(&pk.Y, I)
+	h := SP.H(pk.Y, I)
 	delta_m := utils.SUB(m, m_p)
-	R_p.Y_a = *utils.POWZN(h, utils.MUL(delta_m, &sk.X)).ThenMul(&R.Y_a)
-	R_p.G_a = *utils.POWZN(h, delta_m).ThenMul(&R.G_a)
+	R_p.Y_a = utils.POWZN(h, utils.MUL(delta_m, sk.X)).ThenMul(R.Y_a)
+	R_p.G_a = utils.POWZN(h, delta_m).ThenMul(R.G_a)
 
 	return R_p
 }

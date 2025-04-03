@@ -1,13 +1,14 @@
 package CH_KEF_MH_RSA_F_AM_2004
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Hugu1e/ChameLibGo/utils"
 )
 
-func run_scheme(t *testing.T){
-	pp := SetUp(512, 1024)
+func run_scheme(t *testing.T, tau, k int64) {
+	pp := SetUp(tau, k)
 
 	pk, sk := KeyGen(pp)
 
@@ -61,7 +62,18 @@ func run_scheme(t *testing.T){
 }
 
 func Test_Native(t *testing.T) {
-	run_scheme(t)
+	cases := []struct {
+		tau int64
+		k int64
+	}{
+		{512, 1024},
+	}
+
+	for i, c := range cases {
+		t.Run(fmt.Sprintf("case %d tau %d k %d", i+1, c.tau, c.k), func(t *testing.T) {
+			run_scheme(t, c.tau, c.k)
+		})
+	}
 }
 
 
