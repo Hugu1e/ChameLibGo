@@ -40,6 +40,10 @@ func run_scheme_benchmark(t *testing.T, curve curve.Curve, swap bool, k int) {
 	S1.Add("A")
 	S1.Add("DDDD")
 
+	S2 := utils.NewAttributeList()
+	S2.Add("BB")
+	S2.Add("CCC")
+
 	u1 := make([]*User, repeat)
 	for i := 0; i < repeat; i++ {
 		u1[i] = NewUserWithLen(SP[i], k/3)
@@ -47,6 +51,12 @@ func run_scheme_benchmark(t *testing.T, curve curve.Curve, swap bool, k int) {
 		timer.Start("KeyGen")
 		KeyGen(u1[i], SP[i], MPK[i], MSK[i], S1)
 		timer.End("KeyGen")
+	}
+	u2 := make([]*User, repeat)
+	for i := 0; i < repeat; i++{
+		u2[i] = NewUserFromUser(u1[i], SP[i], k/2)
+		AssignUser(u2[i], MPK[i], MSK[i])
+		KeyGen(u2[i], SP[i], MPK[i], MSK[i], S2)
 	}
 
 	m1 := make([]*pbc.Element, repeat)
@@ -56,34 +66,34 @@ func run_scheme_benchmark(t *testing.T, curve curve.Curve, swap bool, k int) {
 		m2[i] = SP[i].GP.GetZrElement()
 	}
 
-	h1 := make([]*HashValue, repeat)
-	r1 := make([]*Randomness, repeat)
+	h2 := make([]*HashValue, repeat)
+	r2 := make([]*Randomness, repeat)
 	timer.Start("Hash")
 	for i := 0; i < repeat; i++ {
-		h1[i], r1[i] = Hash(SP[i], MPK[i], u1[i], MSP[i], m1[i])
+		h2[i], r2[i] = Hash(SP[i], MPK[i], u2[i], MSP[i], m2[i])
 	}
 	timer.End("Hash")
 
 	checkRes := make([]bool, repeat)
 	timer.Start("Check")
 	for i := 0; i < repeat; i++ {
-		checkRes[i] = Check(h1[i], r1[i], SP[i], MPK[i], m1[i])
+		checkRes[i] = Check(h2[i], r2[i], SP[i], MPK[i], m2[i])
 	}
 	timer.End("Check")
 	for i := 0; i < repeat; i++ {
 		if !checkRes[i] {
-			t.Fatal("H(m1) invalid")
+			t.Fatal("H(m2) invalid")
 		}
 	}
 
 	r1_p := make([]*Randomness, repeat)
 	timer.Start("Adapt")
 	for i := 0; i < repeat; i++ {
-		r1_p[i] = Adapt(h1[i], r1[i], SP[i], MPK[i], MSK[i], u1[i], MSP[i], m1[i], m2[i])
+		r1_p[i] = Adapt(h2[i], r2[i], SP[i], MPK[i], MSK[i], u1[i], MSP[i], m2[i], m1[i])
 	}
 	timer.End("Adapt")
 	for i := 0; i < repeat; i++ {
-		if !Check(h1[i], r1_p[i], SP[i], MPK[i], m2[i]) {
+		if !Check(h2[i], r1_p[i], SP[i], MPK[i], m1[i]) {
 			t.Fatal("Adapt(m2) invalid")
 		}
 	}
