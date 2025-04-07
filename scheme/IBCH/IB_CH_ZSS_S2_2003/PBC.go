@@ -10,7 +10,7 @@ import (
 type PublicParam struct {
 	Pairing *pbc.Pairing
 	Zr, G1, GT pbc.Field
-	P, P_pub pbc.Element
+	P, P_pub *pbc.Element
 }
 
 func (sp *PublicParam) pairing(g1, g2 *pbc.Element) *pbc.Element {
@@ -30,24 +30,24 @@ func (sp *PublicParam) GetZrElement() *pbc.Element {
 }
 
 type MasterSecretKey struct {
-	S pbc.Element
+	S *pbc.Element
 }
 
 type SecretKey struct {
-	S_ID pbc.Element
+	S_ID *pbc.Element
 }
 
 type HashValue struct {
-	H pbc.Element
+	H *pbc.Element
 }
 
 type Randomness struct {
-	R pbc.Element
+	R *pbc.Element
 }
 
 func getHashValue(R *Randomness, sp *PublicParam, ID, m *pbc.Element) *pbc.Element {
-	temp1 := sp.pairing(&sp.P, &sp.P)
-	temp2 := sp.pairing(utils.POWZN(&sp.P, sp.H1(ID)).ThenMul(&sp.P_pub), &R.R)
+	temp1 := sp.pairing(sp.P, sp.P)
+	temp2 := sp.pairing(utils.POWZN(sp.P, sp.H1(ID)).ThenMul(sp.P_pub), R.R)
 	return temp1.ThenMul(temp2).ThenPowZn(sp.H1(m))
 }
 
@@ -58,26 +58,26 @@ func SetUp(curveName curve.Curve) (*PublicParam, *MasterSecretKey) {
 		GT:      pbc.GT,
 		Zr:      pbc.Zr,
 	}
-	sp.P = *sp.GetGElement()
+	sp.P = sp.GetGElement()
 	msk := &MasterSecretKey{
-		S: *sp.GetZrElement(),
+		S: sp.GetZrElement(),
 	}
-	sp.P_pub = *utils.POWZN(&sp.P, &msk.S)
+	sp.P_pub = utils.POWZN(sp.P, msk.S)
 	return sp, msk
 }
 
 func KeyGen(sp *PublicParam, msk *MasterSecretKey, ID *pbc.Element) *SecretKey {
 	return &SecretKey{
-		S_ID: *utils.POWZN(&sp.P, utils.INVERT(utils.ADD(&msk.S, sp.H1(ID)))),
+		S_ID: utils.POWZN(sp.P, utils.INVERT(utils.ADD(msk.S, sp.H1(ID)))),
 	}
 }
 
 func Hash(sp *PublicParam, ID, m *pbc.Element) (*HashValue, *Randomness) {
 	R := &Randomness{
-		R: *sp.GetGElement(),
+		R: sp.GetGElement(),
 	}
 	H := &HashValue{
-		H: *getHashValue(R, sp, ID, m),
+		H: getHashValue(R, sp, ID, m),
 	}
 	return H, R
 }
@@ -90,7 +90,7 @@ func Adapt(R *Randomness, sp *PublicParam, sk *SecretKey, m, m_p *pbc.Element) *
 	H1m := sp.H1(m)
 	H1m_p := sp.H1(m_p)
 	R_p := &Randomness{
-		R: *utils.POWZN(&sk.S_ID, utils.SUB(H1m, H1m_p).ThenDiv(H1m_p)).ThenMul(utils.POWZN(&R.R, utils.DIV(H1m, H1m_p))),
+		R: utils.POWZN(sk.S_ID, utils.SUB(H1m, H1m_p).ThenDiv(H1m_p)).ThenMul(utils.POWZN(R.R, utils.DIV(H1m, H1m_p))),
 	}
 	return R_p
 }

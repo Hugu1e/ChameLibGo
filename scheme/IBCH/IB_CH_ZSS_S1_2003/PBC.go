@@ -11,7 +11,7 @@ type PublicParam struct {
 	Pairing    *pbc.Pairing
 	Zr, G1, G2, GT pbc.Field
 	SwapG1G2   bool
-	P, P_pub   pbc.Element
+	P, P_pub   *pbc.Element
 }
 
 func (pp *PublicParam) pairing(g1, g2 *pbc.Element) *pbc.Element {
@@ -56,23 +56,23 @@ func (pp *PublicParam) GetZrElement() *pbc.Element {
 }
 
 type MasterSecretKey struct {
-	S pbc.Element
+	S *pbc.Element
 }
 
 type SecretKey struct {
-	S_ID pbc.Element
+	S_ID *pbc.Element
 }
 
 type HashValue struct {
-	H pbc.Element
+	H *pbc.Element
 }
 
 type Randomness struct {
-	R pbc.Element
+	R *pbc.Element
 }
 
 func getHashValue(R *Randomness, SP *PublicParam, ID, m *pbc.Element) *pbc.Element {
-	return SP.pairing(&R.R, &SP.P).ThenMul(SP.pairing(SP.H0(ID).ThenPowZn(SP.H1(m)), &SP.P_pub))
+	return SP.pairing(R.R, SP.P).ThenMul(SP.pairing(SP.H0(ID).ThenPowZn(SP.H1(m)), SP.P_pub))
 }
 
 func SetUp(curveName curve.Curve, swapG1G2 bool) (*PublicParam, *MasterSecretKey) {
@@ -91,9 +91,9 @@ func SetUp(curveName curve.Curve, swapG1G2 bool) (*PublicParam, *MasterSecretKey
 	SP.GT = pbc.GT
 	SP.Zr = pbc.Zr
 
-	SP.P = *SP.GetG2Element()
-	msk.S = *SP.GetZrElement()
-	SP.P_pub = *utils.POWZN(&SP.P, &msk.S)
+	SP.P = SP.GetG2Element()
+	msk.S = SP.GetZrElement()
+	SP.P_pub = utils.POWZN(SP.P, msk.S)
 
 	return SP, msk
 }
@@ -101,7 +101,7 @@ func SetUp(curveName curve.Curve, swapG1G2 bool) (*PublicParam, *MasterSecretKey
 func KeyGen(SP *PublicParam, msk *MasterSecretKey, ID *pbc.Element) *SecretKey {
 	sk := new(SecretKey)
 
-	sk.S_ID = *SP.H0(ID).ThenPowZn(&msk.S)
+	sk.S_ID = SP.H0(ID).ThenPowZn(msk.S)
 
 	return sk
 }
@@ -110,8 +110,8 @@ func Hash(SP *PublicParam, ID, m *pbc.Element) (*HashValue, *Randomness) {
 	H := new(HashValue)
 	R := new(Randomness)
 
-	R.R = *SP.GetG1Element()
-	H.H = *getHashValue(R, SP, ID, m)
+	R.R = SP.GetG1Element()
+	H.H = getHashValue(R, SP, ID, m)
 
 	return H, R
 }
@@ -123,7 +123,7 @@ func Check(H *HashValue, R *Randomness, SP *PublicParam, ID, m *pbc.Element) boo
 func Adapt(R *Randomness, SP *PublicParam, sk *SecretKey, m, m_p *pbc.Element) *Randomness {
 	R_p := new(Randomness)
 
-	R_p.R = *utils.MUL(&R.R, utils.POWZN(&sk.S_ID, SP.H1(m).ThenSub(SP.H1(m_p))))
+	R_p.R = utils.MUL(R.R, utils.POWZN(sk.S_ID, SP.H1(m).ThenSub(SP.H1(m_p))))
 
 	return R_p
 }

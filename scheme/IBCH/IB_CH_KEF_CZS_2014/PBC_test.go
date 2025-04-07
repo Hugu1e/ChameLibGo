@@ -30,7 +30,7 @@ func run_scheme(t *testing.T, curve curve.Curve, swap bool){
 
 	sk1 := KeyGen(pp, msk, ID1)
 	sk2 := KeyGen(pp, msk, ID2)
-	if sk1.S_ID.Equals(&sk2.S_ID) {
+	if sk1.S_ID.Equals(sk2.S_ID) {
 		t.Errorf("sk1 == sk2")
 	}
 
