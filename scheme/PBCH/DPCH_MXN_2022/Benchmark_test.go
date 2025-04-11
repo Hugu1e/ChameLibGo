@@ -138,7 +138,7 @@ func TestDPCH_MXN_2022(t *testing.T) {
 		curve.A1,
 		curve.E,
 	}
-	auth_nums := []int{16, 32, 64}
+	auth_nums := []int{256, 512, 1024}
 	lamudas := []int64{256, 512, 1024}
 
 	cases := []struct {

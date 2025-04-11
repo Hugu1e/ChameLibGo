@@ -117,9 +117,7 @@ func TestPCHBA_TLL_2020(t *testing.T) {
 	}
 	swaps := []bool{false, true}
 	ks := []int{
-		8,
-		16,
-		24,
+		32, 64, 128,
 	}
 
 	cases := []struct {

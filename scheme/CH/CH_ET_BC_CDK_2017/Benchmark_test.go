@@ -75,9 +75,6 @@ func TestCH_ET_BC_CDK_2017(t *testing.T) {
 	cases := []struct {
 		lamuda int64
 	}{
-		{32},
-		{64},
-		{128},
 		{256},
 		{512},
 		{1024},

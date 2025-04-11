@@ -82,6 +82,8 @@ func TestCH_KEF_MH_RSA_F_AM_2004(t *testing.T) {
 		tau int64
 		k int64
 	}{
+		{128, 256},
+		{256, 512},
 		{512, 1024},
 	}
 
