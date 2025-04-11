@@ -74,6 +74,8 @@ func TestCH_KEF_NoMH_AM_2004(t *testing.T) {
 	cases := []struct {
 		k int64
 	}{
+		{128},
+		{256},
 		{512},
 	}
 
