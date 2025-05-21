@@ -76,7 +76,9 @@ func TestCH_KEF_MH_RSANN_F_AM_2004(t *testing.T) {
 	cases := []struct {
 		bitLen int64
 	}{
+		{256},
 		{512},
+		{1024},
 	}
 
 	for i, c := range cases {

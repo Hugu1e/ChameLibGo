@@ -84,7 +84,6 @@ func TestCH_CDK_2017(t *testing.T) {
 		{256},
 		{512},
 		{1024},
-		{2048},
 	}
 
 	for i, c := range cases {

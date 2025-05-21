@@ -125,8 +125,8 @@ func TestMAPCH_ZLW_2021(t *testing.T) {
 		curve.A1,
 		curve.E,
 	}
-	auth_nums := []int{16, 32, 64}
-	lamudas := []int64{32, 64, 128}
+	auth_nums := []int{256, 512, 1024,}
+	lamudas := []int64{32, 64, 128,}
 
 	cases := []struct {
 		cur curve.Curve

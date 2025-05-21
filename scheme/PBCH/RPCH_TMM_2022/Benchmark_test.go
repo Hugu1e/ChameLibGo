@@ -147,9 +147,7 @@ func TestRPCH_TMM_2022(t *testing.T) {
 		pbc.GT,
 	}
 	nodes := []int{
-		16,
-		32,
-		64,
+		1024, 2048, 4096,
 	}
 
 	cases := []struct {
